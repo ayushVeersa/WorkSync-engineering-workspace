@@ -9,6 +9,9 @@ from apps.services.auth import hash_password, verify_password
 from apps.services.user_service import authenticate_user, create_user
 from apps.services.jwt import create_access_token
 from apps.core.security import get_current_user
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(
         prefix="/auth",
@@ -24,7 +27,10 @@ def register_user(
     """
     Register once(for admin registration)
     """
-    return create_user(user, db)
+    logger.info("Register user request received for email=%s", user.email)
+    result = create_user(user, db)
+    logger.info("User registered successfully, id=%s", result.id)
+    return result
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -35,6 +41,7 @@ def login(
     """
     Verify user credentials and generate JWT token.
     """
+    logger.info("Login request received for email=%s", user_cred.email)
 
     user = authenticate_user(
         db,
@@ -43,6 +50,7 @@ def login(
     )
 
     if not user:
+        logger.warning("Login failed for email=%s", user_cred.email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -53,6 +61,7 @@ def login(
         data = {"sub": user.email}
     )
 
+    logger.info("Login successful for user id=%s email=%s", user.id, user.email)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -64,4 +73,5 @@ def login(
 def fetch_current_user(
     user = Depends(get_current_user)
 ):
+    logger.info("Fetch current user request for email=%s", user.email)
     return user

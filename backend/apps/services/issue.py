@@ -11,6 +11,9 @@ from apps.schemas.issue import (
     IssueStatus,
     IssuePriority
 )
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_issue(
@@ -24,10 +27,12 @@ def get_issue(
     )
 
     if not issue:
+        logger.warning("Issue not found for id=%s", issue_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Issue not found",
         )
+    logger.info("Fetched issue id=%s", issue_id)
     return issue
 
 
@@ -44,7 +49,9 @@ def get_all_issues(
     if priority is not None:
         query = query.filter(Issue.priority == priority)
 
-    return query.all()
+    issues = query.all()
+    logger.info("Fetched all issues, count=%s, status=%s, priority=%s", len(issues), status, priority)
+    return issues
 
 
 def create_issue(
@@ -59,6 +66,7 @@ def create_issue(
     )
 
     if not project:
+        logger.warning("Project not found for id=%s while creating issue", issue.project_id)
         raise HTTPException(
             status_code=404,
             detail="Project not found",
@@ -71,6 +79,7 @@ def create_issue(
     )
 
     if not assignee:
+        logger.warning("Employee not found for id=%s while creating issue", issue.assignee_id)
         raise HTTPException(
             status_code=404,
             detail="Employee not found",
@@ -86,6 +95,11 @@ def create_issue(
     )
 
     if not assignment:
+        logger.warning(
+            "Employee %s not assigned to project %s while creating issue",
+            issue.assignee_id,
+            issue.project_id,
+        )
         raise HTTPException(
             status_code=400,
             detail="Employee is not assigned to this project",
@@ -107,6 +121,8 @@ def create_issue(
     db.commit()
     db.refresh(db_issue)
 
+    logger.info("Created issue id=%s title=%s project_id=%s reporter_id=%s",
+                db_issue.id, db_issue.title, issue.project_id, reporter_id)
     return db_issue
 
 
@@ -125,6 +141,7 @@ def update_issue(
     db.commit()
     db.refresh(issue)
 
+    logger.info("Updated issue id=%s with fields=%s", issue_id, list(data.keys()))
     return issue
 
 
@@ -137,6 +154,7 @@ def delete_issue(
     db.delete(issue)
     db.commit()
 
+    logger.info("Deleted issue id=%s", issue_id)
     return {
         "message": "Issue deleted successfully"
     }
@@ -146,41 +164,49 @@ def get_project_issues(
     db: Session,
     project_id: int,
 ):
-    return (
+    issues = (
         db.query(Issue)
         .filter(Issue.project_id == project_id)
         .all()
     )
+    logger.info("Fetched issues for project_id=%s, count=%s", project_id, len(issues))
+    return issues
 
 
 def get_my_issues(
     db: Session,
     employee_id: int,
 ):
-    return (
+    issues = (
         db.query(Issue)
         .filter(Issue.assignee_id == employee_id)
         .all()
     )
+    logger.info("Fetched my issues for employee_id=%s, count=%s", employee_id, len(issues))
+    return issues
 
 
 def get_issues_by_status(
     db: Session,
     status,
 ):
-    return (
+    issues = (
         db.query(Issue)
         .filter(Issue.status == status)
         .all()
     )
+    logger.info("Fetched issues by status=%s, count=%s", status, len(issues))
+    return issues
 
 
 def get_issues_by_priority(
     db: Session,
     priority,
 ):
-    return (
+    issues = (
         db.query(Issue)
         .filter(Issue.priority == priority)
         .all()
     )
+    logger.info("Fetched issues by priority=%s, count=%s", priority, len(issues))
+    return issues

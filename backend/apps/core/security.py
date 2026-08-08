@@ -8,6 +8,9 @@ from apps.services.jwt import decode_access_token
 from apps.services.user_service import get_user_by_email
 from apps.models.user import User
 from apps.db.database import get_db
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # oauth2 = OAuth2PasswordBearer(
 #     tokenUrl = "/auth/login"
@@ -17,7 +20,7 @@ security = HTTPBearer()
 
 def get_current_user(
     # token: str = Depends(oauth2),
-    credentials: HTTPAuthorizationCredentials  = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
     try:
@@ -26,6 +29,7 @@ def get_current_user(
 
         email = payload.get("sub")
         if email is None:
+                logger.warning("Token payload missing 'sub' claim")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Could not validate credentials",
@@ -33,6 +37,7 @@ def get_current_user(
                 )
 
     except JWTError:
+            logger.warning("JWT validation failed for token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
@@ -42,6 +47,7 @@ def get_current_user(
     user = get_user_by_email(email, db)
 
     if user is None:
+        logger.warning("Authenticated token references unknown email: %s", email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -49,10 +55,12 @@ def get_current_user(
         )
 
     if not user.is_active:
+        logger.warning("Authenticated user is inactive: %s", email)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User not active",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    logger.info("Authenticated user=%s id=%s role=%s", user.email, user.id, user.role)
     return user

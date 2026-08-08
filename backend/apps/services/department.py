@@ -3,7 +3,9 @@ from fastapi import HTTPException, status
 
 from apps.models.department import Department
 from apps.schemas.department import DepartmentRequest, DepartmentUpdate
+from apps.core.logging import get_logger
 
+logger = get_logger(__name__)
 
 
 def get_all_departments(
@@ -12,12 +14,15 @@ def get_all_departments(
     limit: int = 10
 ):
 
-    return (
+    departments = (
         db.query(Department)
         .offset(skip)
         .limit(limit)
         .all()
     )
+
+    logger.info("Fetched all departments, count=%s, skip=%s, limit=%s", len(departments), skip, limit)
+    return departments
 
 
 def get_department(
@@ -25,24 +30,20 @@ def get_department(
     dept_id: int
 ) -> Department:
 
-    # if dept_id is None:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Dept. id cannot be empty"
-    #     )
-
     dept = (
         db.query(Department)
-        .filter(Department.id==dept_id)
+        .filter(Department.id == dept_id)
         .first()
     )
 
     if dept is None:
+        logger.warning("Department not found for id=%s", dept_id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No department found"
         )
 
+    logger.info("Fetched department id=%s", dept_id)
     return dept
 
 
@@ -53,26 +54,27 @@ def create_deparment(
 
     existing = (
         db.query(Department)
-        .filter(Department.name==payload.name)
+        .filter(Department.name == payload.name)
         .first()
     )
 
     if existing:
+        logger.warning("Department already exists with name=%s", payload.name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Department with this id already exists"
         )
 
     dept = Department(
-        #id = payload.id,
-        name = payload.name,
-        description = payload.description
+        name=payload.name,
+        description=payload.description
     )
 
     db.add(dept)
     db.commit()
     db.refresh(dept)
 
+    logger.info("Created department id=%s name=%s", dept.id, dept.name)
     return dept
 
 
@@ -92,6 +94,7 @@ def update_department(
     db.commit()
     db.refresh(dept)
 
+    logger.info("Updated department id=%s with fields=%s", dept_id, list(update_dept.keys()))
     return dept
 
 
@@ -103,6 +106,7 @@ def delete_department(db: Session, dept_id: int):
     db.delete(dept)
     db.commit()
 
+    logger.info("Deleted department id=%s", dept_id)
     return {
         "message": "Department deleted successfully"
     }

@@ -1,5 +1,9 @@
 import bcrypt
 
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def hash_password(password: str) -> str:
     """
@@ -10,6 +14,7 @@ def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
 
     hashed_psswd = bcrypt.hashpw(encoded_psswd, salt)
+    logger.info("Hashed a new password")
     return hashed_psswd.decode("utf-8")
 
 
@@ -23,4 +28,6 @@ def verify_password(password, hash_psswd: str) -> bool:
     encoded_passwd = password.encode("utf-8")
     encoded_hash_passwd = hash_psswd.encode("utf-8")
 
-    return bcrypt.checkpw(encoded_passwd, encoded_hash_passwd)
+    result = bcrypt.checkpw(encoded_passwd, encoded_hash_passwd)
+    logger.debug("Password verification result: %s", result)
+    return result

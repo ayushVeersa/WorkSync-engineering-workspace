@@ -11,11 +11,14 @@ from apps.schemas.project import ProjectStatus
 from apps.schemas.issue import (
     IssueStatus,
 )
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_dashboard_summary(db: Session):
 
-    return {
+    summary = {
         "total_employees": db.query(func.count(Employee.id)).scalar(),
 
         "total_departments": db.query(func.count(Department.id)).scalar(),
@@ -32,6 +35,9 @@ def get_dashboard_summary(db: Session):
             .scalar()
         )
     }
+
+    logger.info("Computed dashboard summary: %s", summary)
+    return summary
 
 
 def get_my_work(
@@ -66,12 +72,14 @@ def get_my_work(
         .scalar()
     )
 
-    return {
+    result = {
         "assigned_issues": assigned,
         "completed_issues": completed,
         "projects": projects,
         "comments": comments,
     }
+    logger.info("Computed my-work summary for employee_id=%s: %s", employee_id, result)
+    return result
 
 
 def issues_by_status(db: Session):
@@ -85,13 +93,15 @@ def issues_by_status(db: Session):
         .all()
     )
 
-    return [
+    result = [
         {
             "status": status.value,
             "count": count,
         }
         for status, count in rows
     ]
+    logger.info("Computed issues-by-status: %s", result)
+    return result
 
 
 def issues_by_priority(db: Session):
@@ -105,13 +115,15 @@ def issues_by_priority(db: Session):
         .all()
     )
 
-    return [
+    result = [
         {
             "priority": priority.value,
             "count": count,
         }
         for priority, count in rows
     ]
+    logger.info("Computed issues-by-priority: %s", result)
+    return result
 
 
 def project_overview(db: Session):
@@ -143,4 +155,5 @@ def project_overview(db: Session):
             }
         )
 
+    logger.info("Computed project overview for %s projects", len(data))
     return data

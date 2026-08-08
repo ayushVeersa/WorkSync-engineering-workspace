@@ -2,6 +2,9 @@ from datetime import timezone, datetime, timedelta
 from jose import jwt
 
 from apps.core.config import settings
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def create_access_token(data: dict):
@@ -16,11 +19,14 @@ def create_access_token(data: dict):
 
     payload["exp"] = expiry
 
-    return jwt.encode(
+    token = jwt.encode(
             payload,
             settings.jwt_secret,
             algorithm=settings.algorithm
     )
+
+    logger.info("Created access token for subject=%s", data.get("sub"))
+    return token
 
 
 def decode_access_token(access_token: str):
@@ -29,13 +35,12 @@ def decode_access_token(access_token: str):
 
     It takes the access_token as the arg.
     """
-    
-    return (
-        jwt.decode(
+
+    decoded = jwt.decode(
             access_token,
             settings.jwt_secret,
             algorithms=settings.algorithm
         )
-    )
 
-
+    logger.info("Decoded access token for subject=%s", decoded.get("sub"))
+    return decoded

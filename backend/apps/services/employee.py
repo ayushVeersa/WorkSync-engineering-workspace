@@ -10,6 +10,9 @@ from apps.schemas.employee import (
 )
 from apps.schemas.user import UserRegister
 from apps.services.user_service import create_user
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_employee(db: Session, employee_id: int) -> Employee:
@@ -21,11 +24,13 @@ def get_employee(db: Session, employee_id: int) -> Employee:
     )
 
     if not employee:
+        logger.warning("Employee not found for id=%s", employee_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Employee not found",
         )
 
+    logger.info("Fetched employee id=%s", employee_id)
     return employee
 
 
@@ -40,16 +45,18 @@ def get_employee_by_user_id(
     )
 
     if employee is None:
+        logger.warning("Employee not found for user_id=%s", user_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Employee not found",
         )
+    logger.info("Fetched employee id=%s for user_id=%s", employee.id, user_id)
     return employee
 
 
 def get_employees(db: Session, skip: int = 0, limit: int = 10):
 
-    return (
+    employees = (
         db.query(Employee)
         .filter(Employee.is_active.is_(True))
         .offset(skip)
@@ -57,12 +64,14 @@ def get_employees(db: Session, skip: int = 0, limit: int = 10):
         .all()
     )
 
+    logger.info("Fetched employees list, count=%s, skip=%s, limit=%s", len(employees), skip, limit)
+    return employees
+
 
 def create_employee(
     db: Session,
     payload: EmployeeRegistrationRequest,
 ) -> Employee:
-
 
     # Find/create the backing User
     existing_user = (
@@ -85,6 +94,7 @@ def create_employee(
     else:
         user = existing_user
 
+    logger.info("Resolved backing user id=%s for employee registration email=%s", user.id, payload.email)
 
     department = (
         db.query(Department)
@@ -93,6 +103,7 @@ def create_employee(
     )
 
     if department is None:
+        logger.warning("Department not found for id=%s while creating employee", payload.department_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Department not found",
@@ -105,6 +116,7 @@ def create_employee(
     )
 
     if existing_employee:
+        logger.warning("Employee already exists for user_id=%s", user.id)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Employee already exists",
@@ -121,8 +133,8 @@ def create_employee(
     db.commit()
     db.refresh(employee)
 
+    logger.info("Created employee id=%s for user_id=%s", employee.id, user.id)
     return employee
-
 
 
 def update_employee(
@@ -141,6 +153,7 @@ def update_employee(
     db.commit()
     db.refresh(employee)
 
+    logger.info("Updated employee id=%s with fields=%s", employee_id, list(update_data.keys()))
     return employee
 
 
@@ -152,6 +165,7 @@ def delete_employee(db: Session, employee_id: int):
 
     db.commit()
 
+    logger.info("Soft-deleted employee id=%s", employee_id)
     return {
         "message": "Employee deleted successfully"
     }

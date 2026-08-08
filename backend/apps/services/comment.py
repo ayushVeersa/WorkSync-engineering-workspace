@@ -5,11 +5,14 @@ from apps.models.comment import Comment
 from apps.models.issue import Issue
 from apps.models.employee import Employee
 from apps.models.employee_project import EmployeeProject
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 from apps.schemas.comment import (
     CommentCreate,
     CommentUpdate,
 )
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_comment(
@@ -27,11 +30,13 @@ def get_comment(
     )
 
     if not comment:
+        logger.warning("Comment not found for id=%s", comment_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment not found",
         )
 
+    logger.info("Fetched comment id=%s", comment_id)
     return comment
 
 
@@ -42,11 +47,13 @@ def get_issue_comments(
     """
     Fetch comments of an Issue using Issue ID.
     """
-    return (
+    comments = (
         db.query(Comment)
         .filter(Comment.issue_id == issue_id)
         .all()
     )
+    logger.info("Fetched comments for issue_id=%s, count=%s", issue_id, len(comments))
+    return comments
 
 
 def create_comment(
@@ -65,6 +72,7 @@ def create_comment(
     )
 
     if not issue:
+        logger.warning("Issue not found for id=%s while creating comment", issue_id)
         raise HTTPException(
             status_code=404,
             detail="Issue not found",
@@ -80,6 +88,8 @@ def create_comment(
     )
 
     if not assignment:
+        logger.warning("Employee %s not part of project %s while creating comment",
+                       employee_id, issue.project_id)
         raise HTTPException(
             status_code=403,
             detail="Employee is not part of this project",
@@ -97,11 +107,14 @@ def create_comment(
         db.refresh(comment)
     except Exception:
         db.rollback()
+        logger.exception("Failed to create comment on issue_id=%s", issue_id)
         raise HTTPException(
             status_code=500,
             detail="Database error",
         )
 
+    logger.info("Created comment id=%s on issue_id=%s by employee_id=%s",
+                comment.id, issue_id, employee_id)
     return comment
 
 
@@ -120,6 +133,8 @@ def update_comment(
         comment.employee_id != current_employee.id
         and current_employee.role != Role.ADMIN
     ):
+        logger.warning("Unauthorized comment update attempt on comment_id=%s by employee_id=%s",
+                       comment_id, current_employee.id)
         raise HTTPException(
             status_code=403,
             detail="Not authorized",
@@ -132,11 +147,13 @@ def update_comment(
         db.refresh(comment)
     except Exception:
         db.rollback()
+        logger.exception("Failed to update comment id=%s", comment_id)
         raise HTTPException(
             status_code=500,
             detail="Database error",
         )
 
+    logger.info("Updated comment id=%s by employee_id=%s", comment_id, current_employee.id)
     return comment
 
 
@@ -154,6 +171,8 @@ def delete_comment(
         comment.employee_id != current_employee.id
         and current_employee.role != Role.ADMIN
     ):
+        logger.warning("Unauthorized comment delete attempt on comment_id=%s by employee_id=%s",
+                       comment_id, current_employee.id)
         raise HTTPException(
             status_code=403,
             detail="Not authorized",
@@ -164,11 +183,13 @@ def delete_comment(
         db.commit()
     except Exception:
         db.rollback()
+        logger.exception("Failed to delete comment id=%s", comment_id)
         raise HTTPException(
             status_code=500,
             detail="Database error",
         )
 
+    logger.info("Deleted comment id=%s by employee_id=%s", comment_id, current_employee.id)
     return {
         "message": "Comment deleted successfully"
     }

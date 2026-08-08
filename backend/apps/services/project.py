@@ -6,10 +6,15 @@ from apps.schemas.project import (
     ProjectCreate,
     ProjectUpdate,
 )
+from apps.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_projects(db: Session):
-    return db.query(Project).all()
+    projects = db.query(Project).all()
+    logger.info("Fetched all projects, count=%s", len(projects))
+    return projects
 
 
 def get_project(db: Session, project_id: int):
@@ -20,11 +25,13 @@ def get_project(db: Session, project_id: int):
     )
 
     if not project:
+        logger.warning("Project not found for id=%s", project_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
+    logger.info("Fetched project id=%s", project_id)
     return project
 
 
@@ -46,11 +53,13 @@ def create_project(
         db.refresh(db_project)
     except Exception:
         db.rollback()
+        logger.exception("Failed to create project %s", project.name)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
+    logger.info("Created project id=%s name=%s owner_id=%s", db_project.id, db_project.name, owner_id)
     return db_project
 
 
@@ -71,11 +80,13 @@ def update_project(
         db.refresh(db_project)
     except Exception:
         db.rollback()
+        logger.exception("Failed to update project id=%s", project_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
+    logger.info("Updated project id=%s with fields=%s", project_id, list(update_data.keys()))
     return db_project
 
 
@@ -90,11 +101,13 @@ def delete_project(
         db.commit()
     except Exception:
         db.rollback()
+        logger.exception("Failed to delete project id=%s", project_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
+    logger.info("Deleted project id=%s", project_id)
     return {
         "message": "Project deleted successfully"
     }
