@@ -131,7 +131,7 @@ def update_comment(
 
     if (
         comment.employee_id != current_employee.id
-        and current_employee.role != Role.ADMIN
+        and current_employee.user.role != Role.ADMIN
     ):
         logger.warning("Unauthorized comment update attempt on comment_id=%s by employee_id=%s",
                        comment_id, current_employee.id)
@@ -169,7 +169,7 @@ def delete_comment(
 
     if (
         comment.employee_id != current_employee.id
-        and current_employee.role != Role.ADMIN
+        and current_employee.user.role != Role.ADMIN
     ):
         logger.warning("Unauthorized comment delete attempt on comment_id=%s by employee_id=%s",
                        comment_id, current_employee.id)

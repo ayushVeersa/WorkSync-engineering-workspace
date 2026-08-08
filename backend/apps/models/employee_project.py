@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
 
 from apps.db.database import Base
 
@@ -20,7 +20,7 @@ class EmployeeProject(Base):
     )
 
     assigned_at = Column(
-        DateTime,
-        default=datetime.utcnow,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )

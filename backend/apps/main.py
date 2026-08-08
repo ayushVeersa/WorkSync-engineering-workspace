@@ -51,6 +51,7 @@ async def log_requests(request: Request, call_next):
         client,
     )
 
+    response = None
     try:
         response = await call_next(request)
     except Exception as exc:
@@ -63,13 +64,21 @@ async def log_requests(request: Request, call_next):
         raise
     finally:
         duration_ms = (time.perf_counter() - start_time) * 1000
-        logger.info(
-            "RESPONSE %s %s -> %s (%.2f ms)",
-            request.method,
-            request.url.path,
-            response.status_code,
-            duration_ms,
-        )
+        if response is not None:
+            logger.info(
+                "RESPONSE %s %s -> %s (%.2f ms)",
+                request.method,
+                request.url.path,
+                response.status_code,
+                duration_ms,
+            )
+        else:
+            logger.info(
+                "RESPONSE %s %s -> ERROR (%.2f ms)",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
 
     return response
 
@@ -98,8 +107,6 @@ app.include_router(issue_router)
 app.include_router(comment_router)
 app.include_router(dashboard_router)
 app.include_router(attachment_router)
-
-app.add
 
 
 @app.get("/health")
