@@ -1,0 +1,23 @@
+<app-toast-container></app-toast-container>
+
+<ng-container *ngIf="authService.token(); else authLayout">
+  <div class="app-shell">
+    <app-sidebar
+      [mobileOpen]="mobileSidebarOpen()"
+      (closeMobileMenu)="closeMobileSidebar()"
+    ></app-sidebar>
+
+    <div class="shell-main">
+      <app-topbar
+        (toggleMobileMenu)="toggleMobileSidebar()"
+      ></app-topbar>
+      <main class="page-viewport">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #authLayout>
+  <router-outlet></router-outlet>
+</ng-template>

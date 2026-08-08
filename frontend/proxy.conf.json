@@ -1,0 +1,38 @@
+{
+  "/auth": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/employees": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/department": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/projects": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/issues": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/comments": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/attachments": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/dashboard": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/uploads": {
+    "target": "http://localhost:8000",
+    "secure": false
+  }
+}
