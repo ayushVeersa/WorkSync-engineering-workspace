@@ -1,0 +1,321 @@
+@baseURL = http://127.0.0.1:8000
+@access_token = 
+
+@employeeAccessToken = 
+
+### =========================== HEALTH ===========================
+
+GET {{baseURL}}/health
+
+### =========================== AUTH ===========================
+
+POST {{baseURL}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "ayush rai",
+    "age": 22,
+    "email": "ayush@google.com",
+    "password": "1234",
+    "role": "ADMIN"
+}
+
+###
+
+POST {{baseURL}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "ayush@google.com",
+    "password": "1234"
+}
+
+
+###
+
+GET {{baseURL}}/auth/me
+Authorization: Bearer {{access_token}}
+
+###
+
+### =========================== EMPLOYEES ===========================
+
+GET {{baseURL}}/employees
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/employees/me
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/employees/1
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/employees
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+    "name": "Just Rai",
+    "email": "justrai@google.com",
+    "password": "1234",
+    "designation": "SDE Intern",
+    "age": 25,
+    "department_id": 1,
+    "role": "EMPLOYEE"
+}
+
+#shivam@google.com --- 1234
+#shivam2@google.com --- 1234
+
+###
+
+PUT {{baseURL}}/employees/1
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+    "age": 22,
+    "designation": "SDE Intern"
+}
+
+###
+
+DELETE {{baseURL}}/employees/1
+Authorization: Bearer {{access_token}}
+
+### =========================== DEPARTMENT ===========================
+
+GET {{baseURL}}/department
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/department/1
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/department
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "name": "CSE",
+    "description": "Core Computer Science and Engineering"
+}
+
+###
+
+PUT {{baseURL}}/department?dept_id=1
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "name": "CSE",
+    "description": "Core Computer Science and Engineering"
+}
+
+###
+
+DELETE {{baseURL}}/department?dept_id=1
+Authorization: Bearer {{access_token}}
+
+### =========================== PROJECTS ===========================
+
+GET {{baseURL}}/projects
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/projects
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "name": "Engineering Workspace",
+    "description": "Internal engineering productivity suite",
+    "status": "ACTIVE"
+}
+
+###
+
+GET {{baseURL}}/projects/1
+Authorization: Bearer {{access_token}}
+
+###
+
+PUT {{baseURL}}/projects/1
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "name": "Engineering Workspace",
+    "description": "Internal engineering productivity suite",
+    "status": "ACTIVE"
+}
+
+###
+
+DELETE {{baseURL}}/projects/1
+Authorization: Bearer {{access_token}}
+
+### =========================== PROJECT MEMBERS ===========================
+
+GET {{baseURL}}/projects/1/members
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/projects/1/members/1
+Authorization: Bearer {{access_token}}
+
+###
+
+DELETE {{baseURL}}/projects/1/members/1
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/projects/employees/1/projects
+Authorization: Bearer {{access_token}}
+
+### =========================== ISSUES ===========================
+
+GET {{baseURL}}/issues
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/issues?status=IN_PROGRESS&priority=HIGH
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/issues/me
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/issues/project/1
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/issues/1
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/issues
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "title": "Fix login bug",
+    "description": "Users cannot log in after password reset",
+    "issue_type": "BUG",
+    "priority": "HIGH",
+    "status": "IN_PROGRESS",
+    "assignee_id": 1,
+    "project_id": 1
+}
+
+###
+
+PUT {{baseURL}}/issues/1
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "status": "DONE"
+}
+
+###
+
+DELETE {{baseURL}}/issues/1
+Authorization: Bearer {{access_token}}
+
+### =========================== COMMENTS ===========================
+
+GET {{baseURL}}/comments/issue/1
+Authorization: Bearer {{access_token}}
+
+###
+
+POST {{baseURL}}/comments/issue/1
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "content": "This is now fixed."
+}
+
+###
+
+PUT {{baseURL}}/comments/1
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "content": "Updated comment text."
+}
+
+###
+
+DELETE {{baseURL}}/comments/1
+Authorization: Bearer {{access_token}}
+
+### =========================== ATTACHMENTS ===========================
+
+POST {{baseURL}}/attachments/issue/1
+Authorization: Bearer {{access_token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="screenshot.png"
+Content-Type: image/png
+
+< ./../../uploads/issues/99a825ee-1161-440b-be93-375e6e899ba3.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+GET {{baseURL}}/attachments/issue/1
+Authorization: Bearer {{access_token}}
+
+###
+
+DELETE {{baseURL}}/attachments/1
+Authorization: Bearer {{access_token}}
+
+### =========================== DASHBOARD ===========================
+
+GET {{baseURL}}/dashboard/summary
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/dashboard/my-work
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/dashboard/issues/status
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/dashboard/issues/priority
+Authorization: Bearer {{access_token}}
+
+###
+
+GET {{baseURL}}/dashboard/projects
+Authorization: Bearer {{access_token}}
+
+###
