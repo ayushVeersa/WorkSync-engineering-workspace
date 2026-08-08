@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 
 
 class UserRegister(BaseModel):
