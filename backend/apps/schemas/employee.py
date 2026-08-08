@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 
 class EmployeeBase(BaseModel):
     age: int

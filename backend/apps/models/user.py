@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from apps.db.database import Base
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 
 
 class User(Base):
