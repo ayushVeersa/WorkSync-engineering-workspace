@@ -13,7 +13,7 @@ from apps.schemas.employee import EmployeeResponse
 from apps.schemas.project import ProjectResponse
 
 from apps.core.permission import require_roles
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 
 
 router = APIRouter(

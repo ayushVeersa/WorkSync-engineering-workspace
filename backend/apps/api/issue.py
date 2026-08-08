@@ -11,7 +11,7 @@ from apps.models.user import User
 from apps.models.employee import Employee
 from apps.core.security import get_current_user
 from apps.core.permission import require_roles
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 from apps.schemas.issue import (
     IssueCreate,
     IssueUpdate,

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from apps.db.database import get_db
 from apps.core.permission import require_roles
-from backend.apps.schemas.role import Role
+from apps.schemas.role import Role
 
 from apps.models.user import User
 from apps.core.security import get_current_user
