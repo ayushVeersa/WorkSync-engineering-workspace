@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
@@ -39,25 +39,25 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
       <div class="metrics-row">
         <div class="metric-box panel">
           <span class="metric-label">Active Projects</span>
-          <span class="metric-number">{{ summary?.active_projects || 0 }}</span>
-          <span class="metric-sub">{{ summary?.total_projects || 0 }} total</span>
+          <span class="metric-number">{{ summary()?.active_projects || 0 }}</span>
+          <span class="metric-sub">{{ summary()?.total_projects || 0 }} total</span>
         </div>
 
         <div class="metric-box panel">
           <span class="metric-label">Total Open Tasks</span>
-          <span class="metric-number">{{ summary?.total_issues || 0 }}</span>
+          <span class="metric-number">{{ summary()?.total_issues || 0 }}</span>
           <span class="metric-sub">Across all projects</span>
         </div>
 
         <div class="metric-box panel">
           <span class="metric-label">Team Members</span>
-          <span class="metric-number">{{ summary?.total_employees || 0 }}</span>
-          <span class="metric-sub">{{ summary?.total_departments || 0 }} departments</span>
+          <span class="metric-number">{{ summary()?.total_employees || 0 }}</span>
+          <span class="metric-sub">{{ summary()?.total_departments || 0 }} departments</span>
         </div>
 
         <div class="metric-box panel">
           <span class="metric-label">Discussion Comments</span>
-          <span class="metric-number">{{ summary?.total_comments || 0 }}</span>
+          <span class="metric-number">{{ summary()?.total_comments || 0 }}</span>
           <span class="metric-sub">Logged activity</span>
         </div>
       </div>
@@ -83,7 +83,7 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let issue of recentTasks">
+                <tr *ngFor="let issue of recentTasks()">
                   <td class="font-semibold">{{ issue.title }}</td>
                   <td class="text-muted">{{ issue.issue_type }}</td>
                   <td><app-status-badge [type]="issue.priority"></app-status-badge></td>
@@ -91,7 +91,7 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
                   <td class="text-muted">{{ issue.updated_at | date:'shortDate' }}</td>
                 </tr>
 
-                <tr *ngIf="recentTasks.length === 0">
+                <tr *ngIf="recentTasks().length === 0">
                   <td colspan="5" class="text-center py-3 text-muted">
                     No open tasks found in workspace.
                   </td>
@@ -110,7 +110,7 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
             </div>
 
             <div class="status-rows">
-              <div *ngFor="let st of statusSummary" class="status-item">
+              <div *ngFor="let st of statusSummary()" class="status-item">
                 <div class="status-label-group">
                   <app-status-badge [type]="st.status"></app-status-badge>
                   <span class="status-count-val">{{ st.count }}</span>
@@ -118,12 +118,12 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
                 <div class="bar-track">
                   <div
                     class="bar-fill"
-                    [style.width.%]="calcPercentage(st.count, summary?.total_issues)"
+                    [style.width.%]="calcPercentage(st.count, summary()?.total_issues)"
                   ></div>
                 </div>
               </div>
 
-              <div *ngIf="statusSummary.length === 0" class="text-muted text-sm py-2 text-center">
+              <div *ngIf="statusSummary().length === 0" class="text-muted text-sm py-2 text-center">
                 No status data available.
               </div>
             </div>
@@ -137,15 +137,15 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
 
             <div class="my-work-grid">
               <div class="work-stat">
-                <span class="work-num">{{ myWork?.assigned_issues || 0 }}</span>
+                <span class="work-num">{{ myWork()?.assigned_issues || 0 }}</span>
                 <span class="work-lbl">Assigned</span>
               </div>
               <div class="work-stat">
-                <span class="work-num text-success">{{ myWork?.completed_issues || 0 }}</span>
+                <span class="work-num text-success">{{ myWork()?.completed_issues || 0 }}</span>
                 <span class="work-lbl">Completed</span>
               </div>
               <div class="work-stat">
-                <span class="work-num text-info">{{ myWork?.projects || 0 }}</span>
+                <span class="work-num text-info">{{ myWork()?.projects || 0 }}</span>
                 <span class="work-lbl">Projects</span>
               </div>
             </div>
@@ -174,7 +174,7 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let proj of projectOverview">
+              <tr *ngFor="let proj of projectOverview()">
                 <td class="font-semibold">{{ proj.name }}</td>
                 <td>{{ proj.members }} members</td>
                 <td>{{ proj.issues }} tasks</td>
@@ -185,7 +185,7 @@ import { SvgIconComponent } from '../../shared/components/svg-icon/svg-icon.comp
                 </td>
               </tr>
 
-              <tr *ngIf="projectOverview.length === 0">
+              <tr *ngIf="projectOverview().length === 0">
                 <td colspan="4" class="text-center py-3 text-muted">
                   No active projects found.
                 </td>
@@ -367,25 +367,25 @@ export class DashboardComponent implements OnInit {
   private issueService = inject(IssueService);
   authService = inject(AuthService);
 
-  summary: DashboardSummary | null = null;
-  myWork: MyWorkSummary | null = null;
-  statusSummary: IssueStatusSummary[] = [];
-  projectOverview: ProjectOverview[] = [];
-  recentTasks: IssueResponse[] = [];
+  summary = signal<DashboardSummary | null>(null);
+  myWork = signal<MyWorkSummary | null>(null);
+  statusSummary = signal<IssueStatusSummary[]>([]);
+  projectOverview = signal<ProjectOverview[]>([]);
+  recentTasks = signal<IssueResponse[]>([]);
 
   ngOnInit() {
     this.fetchDashboardData();
   }
 
   fetchDashboardData() {
-    this.dashboardService.getSummary().subscribe(s => this.summary = s);
-    this.issueService.getIssues().subscribe(issues => this.recentTasks = issues.slice(0, 8));
+    this.dashboardService.getSummary().subscribe(s => this.summary.set(s));
+    this.issueService.getIssues().subscribe(issues => this.recentTasks.set(issues.slice(0, 8)));
 
     this.authService.ensureCurrentUser().subscribe(user => {
       if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
-        this.dashboardService.getMyWork().subscribe(w => this.myWork = w);
-        this.dashboardService.getIssuesByStatus().subscribe(st => this.statusSummary = st);
-        this.dashboardService.getProjectOverview().subscribe(p => this.projectOverview = p);
+        this.dashboardService.getMyWork().subscribe(w => this.myWork.set(w));
+        this.dashboardService.getIssuesByStatus().subscribe(st => this.statusSummary.set(st));
+        this.dashboardService.getProjectOverview().subscribe(p => this.projectOverview.set(p));
       }
     });
   }
