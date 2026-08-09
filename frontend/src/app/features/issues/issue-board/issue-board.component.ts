@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import {
@@ -105,7 +105,7 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
         class="kanban-columns-container"
         cdkDropListGroup
       >
-        <div *ngFor="let col of columns" class="kanban-col panel">
+        <div *ngFor="let col of columns()" class="kanban-col panel">
           <div class="col-header">
             <div class="col-title-group">
               <span class="col-title">{{ col.title }}</span>
@@ -164,7 +164,7 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
           </thead>
           <tbody>
             <tr
-              *ngFor="let issue of allIssues"
+              *ngFor="let issue of allIssues()"
               class="clickable-row"
               (click)="openIssueDetail(issue)"
             >
@@ -177,7 +177,7 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
               <td class="text-muted">{{ (issue.due_date | date:'mediumDate') || '—' }}</td>
             </tr>
 
-            <tr *ngIf="allIssues.length === 0">
+            <tr *ngIf="allIssues().length === 0">
               <td colspan="7" class="text-center py-4 text-muted">
                 No tasks match the active filters.
               </td>
@@ -187,7 +187,7 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
       </div>
 
       <!-- Log New Task Modal -->
-      <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()">
+      <div *ngIf="showCreateModal()" class="modal-backdrop" (click)="closeCreateModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
           <h3>Create Task / Issue</h3>
 
@@ -206,14 +206,14 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
               <div class="form-group">
                 <label class="form-label">Project *</label>
                 <select class="form-select" formControlName="project_id">
-                  <option *ngFor="let proj of projects" [value]="proj.id">{{ proj.name }}</option>
+                  <option *ngFor="let proj of projects()" [value]="proj.id">{{ proj.name }}</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Assignee *</label>
                 <select class="form-select" formControlName="assignee_id">
-                  <option *ngFor="let emp of employees" [value]="emp.id">{{ emp.user.name }} ({{ emp.designation }})</option>
+                  <option *ngFor="let emp of employees()" [value]="emp.id">{{ emp.user.name }} ({{ emp.designation }})</option>
                 </select>
               </div>
             </div>
@@ -249,9 +249,9 @@ import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-mo
 
       <!-- Task Detail Modal -->
       <app-issue-detail-modal
-        *ngIf="selectedIssue"
-        [issue]="selectedIssue"
-        (close)="selectedIssue = null"
+        *ngIf="selectedIssue()"
+        [issue]="selectedIssue()!"
+        (close)="selectedIssue.set(null)"
         (issueUpdated)="loadIssues()"
       ></app-issue-detail-modal>
     </div>
@@ -423,28 +423,28 @@ export class IssueBoardComponent implements OnInit {
   isLoading = true;
   isSubmitting = false;
 
-  allIssues: IssueResponse[] = [];
-  projects: ProjectResponse[] = [];
-  employees: EmployeeResponse[] = [];
+  allIssues = signal<IssueResponse[]>([]);
+  projects = signal<ProjectResponse[]>([]);
+  employees = signal<EmployeeResponse[]>([]);
 
   statusList = Object.values(IssueStatus);
   priorityList = Object.values(IssuePriority);
 
-  columns: { title: string; status: IssueStatus; issues: IssueResponse[] }[] = [
+  columns = signal<{ title: string; status: IssueStatus; issues: IssueResponse[] }[]>([
     { title: 'Backlog', status: IssueStatus.BACKLOG, issues: [] },
     { title: 'To Do', status: IssueStatus.TODO, issues: [] },
     { title: 'In Progress', status: IssueStatus.IN_PROGRESS, issues: [] },
     { title: 'Review', status: IssueStatus.REVIEW, issues: [] },
     { title: 'Testing', status: IssueStatus.TESTING, issues: [] },
     { title: 'Done', status: IssueStatus.DONE, issues: [] }
-  ];
+  ]);
 
   selectedStatusFilter: IssueStatus | null = null;
   selectedPriorityFilter: IssuePriority | null = null;
   showingMyIssuesOnly = false;
 
-  showCreateModal = false;
-  selectedIssue: IssueResponse | null = null;
+  showCreateModal = signal<boolean>(false);
+  selectedIssue = signal<IssueResponse | null>(null);
 
   types = IssueType;
   priorities = IssuePriority;
@@ -474,7 +474,7 @@ export class IssueBoardComponent implements OnInit {
 
     fetch$.subscribe({
       next: data => {
-        this.allIssues = data;
+        this.allIssues.set(data);
         this.distributeColumns(data);
         this.isLoading = false;
       },
@@ -483,19 +483,22 @@ export class IssueBoardComponent implements OnInit {
   }
 
   distributeColumns(data: IssueResponse[]) {
-    this.columns.forEach(col => {
-      col.issues = data.filter(i => i.status === col.status);
-    });
+    this.columns.update(cols =>
+      cols.map(col => ({
+        ...col,
+        issues: data.filter(i => i.status === col.status)
+      }))
+    );
   }
 
   loadProjectsAndEmployees() {
     this.projectService.getProjects().subscribe(p => {
-      this.projects = p;
+      this.projects.set(p);
       if (p.length > 0) this.issueForm.patchValue({ project_id: p[0].id });
     });
 
     this.employeeService.getEmployees().subscribe(e => {
-      this.employees = e;
+      this.employees.set(e);
       if (e.length > 0) this.issueForm.patchValue({ assignee_id: e[0].id });
     });
   }
@@ -536,16 +539,16 @@ export class IssueBoardComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.showCreateModal = true;
+    this.showCreateModal.set(true);
   }
 
   openCreateModalWithStatus(status: IssueStatus) {
     this.issueForm.patchValue({ status });
-    this.showCreateModal = true;
+    this.showCreateModal.set(true);
   }
 
   closeCreateModal() {
-    this.showCreateModal = false;
+    this.showCreateModal.set(false);
   }
 
   submitCreateIssue() {
@@ -574,6 +577,6 @@ export class IssueBoardComponent implements OnInit {
   }
 
   openIssueDetail(issue: IssueResponse) {
-    this.selectedIssue = issue;
+    this.selectedIssue.set(issue);
   }
 }

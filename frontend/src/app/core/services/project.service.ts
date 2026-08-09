@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ProjectResponse, ProjectCreate, ProjectUpdate, AssignmentResponse } from '../models/project.model';
 import { EmployeeResponse } from '../models/employee.model';
 
@@ -11,7 +12,9 @@ export class ProjectService {
   private http = inject(HttpClient);
 
   getProjects(): Observable<ProjectResponse[]> {
-    return this.http.get<ProjectResponse[]>('/projects');
+    return this.http.get<ProjectResponse[]>('/projects').pipe(
+      map(projects => Array.isArray(projects) ? projects : [])
+    );
   }
 
   getProjectById(id: number): Observable<ProjectResponse> {

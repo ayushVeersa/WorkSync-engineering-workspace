@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -40,11 +40,11 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             </div>
             <div class="info-row">
               <span class="info-lbl">Designation</span>
-              <span class="info-val">{{ employee?.designation || 'Engineer' }}</span>
+              <span class="info-val">{{ employee()?.designation || 'Engineer' }}</span>
             </div>
             <div class="info-row">
               <span class="info-lbl">Department</span>
-              <span class="info-val">🏢 {{ employee?.department?.name || 'General' }}</span>
+              <span class="info-val">🏢 {{ employee()?.department?.name || 'General' }}</span>
             </div>
             <div class="info-row">
               <span class="info-lbl">Age</span>
@@ -56,7 +56,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         <!-- Assigned Tasks Table -->
         <div class="panel content-panel">
           <div class="panel-header">
-            <h3>My Assigned Tasks ({{ myIssues.length }})</h3>
+            <h3>My Assigned Tasks ({{ myIssues().length }})</h3>
             <a routerLink="/issues" class="btn btn-secondary btn-sm">Tasks Board</a>
           </div>
 
@@ -71,14 +71,14 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let issue of myIssues">
+                <tr *ngFor="let issue of myIssues()">
                   <td class="font-semibold">{{ issue.title }}</td>
                   <td><app-status-badge [type]="issue.priority"></app-status-badge></td>
                   <td><app-status-badge [type]="issue.status"></app-status-badge></td>
                   <td class="text-muted">{{ issue.updated_at | date:'shortDate' }}</td>
                 </tr>
 
-                <tr *ngIf="myIssues.length === 0">
+                <tr *ngIf="myIssues().length === 0">
                   <td colspan="4" class="text-center py-3 text-muted">
                     No active tasks assigned.
                   </td>
@@ -149,11 +149,11 @@ export class ProfileComponent implements OnInit {
   private issueService = inject(IssueService);
 
   user = this.authService.currentUser;
-  employee: EmployeeResponse | null = null;
-  myIssues: IssueResponse[] = [];
+  employee = signal<EmployeeResponse | null>(null);
+  myIssues = signal<IssueResponse[]>([]);
 
   ngOnInit() {
-    this.employeeService.getCurrentEmployee().subscribe(e => this.employee = e);
-    this.issueService.getMyIssues().subscribe(i => this.myIssues = i);
+    this.employeeService.getCurrentEmployee().subscribe(e => this.employee.set(e));
+    this.issueService.getMyIssues().subscribe(i => this.myIssues.set(i));
   }
 }

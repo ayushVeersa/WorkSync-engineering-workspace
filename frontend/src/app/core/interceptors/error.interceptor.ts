@@ -23,7 +23,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (error.status === 401) {
-        if (!req.url.includes('/auth/login')) {
+        if (req.url.includes('/auth/me')) {
+          return throwError(() => error);
+        } else if (!req.url.includes('/auth/login')) {
           authService.logout(false);
           toast.error('Your session expired. Please sign in again.', 'Session Expired');
         } else {

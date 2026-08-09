@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, of, throwError } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { UserLogin, UserRegister, UserResponse, TokenResponse } from '../models/user.model';
 import { Role } from '../models/role.model';
 import { ToastService } from './toast.service';
@@ -54,7 +54,6 @@ export class AuthService {
     return this.http.get<UserResponse>('/auth/me').pipe(
       tap(user => this.currentUser.set(user)),
       catchError(err => {
-        this.logout(false);
         return of(null);
       })
     );

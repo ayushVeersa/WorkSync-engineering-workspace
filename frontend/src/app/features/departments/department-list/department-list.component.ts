@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DepartmentService } from '../../../core/services/department.service';
@@ -40,7 +40,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let dept of departments">
+            <tr *ngFor="let dept of departments()">
               <td class="font-semibold text-muted">#{{ dept.id }}</td>
               <td class="font-semibold">{{ dept.name }}</td>
               <td class="text-secondary">{{ dept.description || 'No description provided.' }}</td>
@@ -52,7 +52,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               </td>
             </tr>
 
-            <tr *ngIf="departments.length === 0">
+            <tr *ngIf="departments().length === 0">
               <td colspan="4" class="text-center py-4 text-muted">
                 No departments configured.
               </td>
@@ -62,7 +62,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Create Department Modal -->
-      <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()">
+      <div *ngIf="showCreateModal()" class="modal-backdrop" (click)="closeCreateModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
           <h3>Create New Department</h3>
 
@@ -86,9 +86,9 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Edit Department Modal -->
-      <div *ngIf="showEditModal && editingDept" class="modal-backdrop" (click)="closeEditModal()">
+      <div *ngIf="showEditModal() && editingDept()" class="modal-backdrop" (click)="closeEditModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
-          <h3>Edit {{ editingDept.name }}</h3>
+          <h3>Edit {{ editingDept()?.name }}</h3>
 
           <form [formGroup]="editDeptForm" (ngSubmit)="submitEditDepartment()">
             <div class="form-group">
@@ -126,11 +126,11 @@ export class DepartmentListComponent implements OnInit {
   private toast = inject(ToastService);
   authService = inject(AuthService);
 
-  departments: DepartmentResponse[] = [];
-  showCreateModal = false;
-  showEditModal = false;
+  departments = signal<DepartmentResponse[]>([]);
+  showCreateModal = signal<boolean>(false);
+  showEditModal = signal<boolean>(false);
   isSubmitting = false;
-  editingDept: DepartmentResponse | null = null;
+  editingDept = signal<DepartmentResponse | null>(null);
 
   deptForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -147,15 +147,15 @@ export class DepartmentListComponent implements OnInit {
   }
 
   loadDepartments() {
-    this.departmentService.getDepartments().subscribe(d => this.departments = d);
+    this.departmentService.getDepartments().subscribe(d => this.departments.set(d));
   }
 
   openCreateModal() {
-    this.showCreateModal = true;
+    this.showCreateModal.set(true);
   }
 
   closeCreateModal() {
-    this.showCreateModal = false;
+    this.showCreateModal.set(false);
   }
 
   submitCreateDepartment() {
@@ -179,26 +179,27 @@ export class DepartmentListComponent implements OnInit {
   }
 
   openEditModal(dept: DepartmentResponse) {
-    this.editingDept = dept;
+    this.editingDept.set(dept);
     this.editDeptForm.patchValue({
       name: dept.name,
       description: dept.description
     });
-    this.showEditModal = true;
+    this.showEditModal.set(true);
   }
 
   closeEditModal() {
-    this.showEditModal = false;
-    this.editingDept = null;
+    this.showEditModal.set(false);
+    this.editingDept.set(null);
   }
 
   submitEditDepartment() {
-    if (!this.editingDept || this.editDeptForm.invalid) return;
+    const dept = this.editingDept();
+    if (!dept || this.editDeptForm.invalid) return;
 
     this.isSubmitting = true;
     const formVal = this.editDeptForm.value;
 
-    this.departmentService.updateDepartment(this.editingDept.id, {
+    this.departmentService.updateDepartment(dept.id, {
       name: formVal.name!,
       description: formVal.description!
     }).subscribe({

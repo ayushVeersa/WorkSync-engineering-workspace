@@ -1,11 +1,24 @@
+const bypassSpaRoute = function (req) {
+  if (
+    req.method === 'GET' &&
+    req.headers.accept &&
+    req.headers.accept.includes('text/html') &&
+    req.headers['sec-fetch-mode'] === 'navigate'
+  ) {
+    return '/index.html';
+  }
+};
+
 module.exports = {
   "/auth": {
     "target": "http://localhost:8000",
-    "secure": false
+    "secure": false,
+    "bypass": bypassSpaRoute
   },
   "/employees": {
     "target": "http://localhost:8000",
-    "secure": false
+    "secure": false,
+    "bypass": bypassSpaRoute
   },
   "/department": {
     "target": "http://localhost:8000",
@@ -13,11 +26,13 @@ module.exports = {
   },
   "/projects": {
     "target": "http://localhost:8000",
-    "secure": false
+    "secure": false,
+    "bypass": bypassSpaRoute
   },
   "/issues": {
     "target": "http://localhost:8000",
-    "secure": false
+    "secure": false,
+    "bypass": bypassSpaRoute
   },
   "/comments": {
     "target": "http://localhost:8000",
@@ -30,11 +45,7 @@ module.exports = {
   "/dashboard": {
     "target": "http://localhost:8000",
     "secure": false,
-    "bypass": function (req) {
-      if (req.headers.accept && req.headers.accept.indexOf('html') !== -1) {
-        return '/index.html';
-      }
-    }
+    "bypass": bypassSpaRoute
   },
   "/uploads": {
     "target": "http://localhost:8000",

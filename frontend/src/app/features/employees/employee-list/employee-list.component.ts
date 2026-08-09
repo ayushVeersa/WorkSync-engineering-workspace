@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../core/services/employee.service';
@@ -51,7 +51,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let emp of employees">
+            <tr *ngFor="let emp of employees()">
               <td class="font-semibold">{{ emp.user.name }}</td>
               <td class="text-muted">{{ emp.user.email }}</td>
               <td><app-status-badge [type]="emp.user.role"></app-status-badge></td>
@@ -77,7 +77,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               </td>
             </tr>
 
-            <tr *ngIf="employees.length === 0">
+            <tr *ngIf="employees().length === 0">
               <td colspan="6" class="text-center py-4 text-muted">
                 No employees registered in directory.
               </td>
@@ -87,7 +87,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Create Employee Modal -->
-      <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()">
+      <div *ngIf="showCreateModal()" class="modal-backdrop" (click)="closeCreateModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
           <h3>Add New Team Member</h3>
 
@@ -123,7 +123,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               <div class="form-group">
                 <label class="form-label">Department *</label>
                 <select class="form-select" formControlName="department_id">
-                  <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
+                  <option *ngFor="let dept of departments()" [value]="dept.id">{{ dept.name }}</option>
                 </select>
               </div>
 
@@ -146,9 +146,9 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Edit Employee Modal -->
-      <div *ngIf="showEditModal && editingEmployee" class="modal-backdrop" (click)="closeEditModal()">
+      <div *ngIf="showEditModal() && editingEmployee()" class="modal-backdrop" (click)="closeEditModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
-          <h3>Edit {{ editingEmployee.user.name }}</h3>
+          <h3>Edit {{ editingEmployee()?.user?.name }}</h3>
 
           <form [formGroup]="editForm" (ngSubmit)="submitEditEmployee()">
             <div class="form-group">
@@ -189,14 +189,14 @@ export class EmployeeListComponent implements OnInit {
   private toast = inject(ToastService);
   authService = inject(AuthService);
 
-  employees: EmployeeResponse[] = [];
-  departments: DepartmentResponse[] = [];
+  employees = signal<EmployeeResponse[]>([]);
+  departments = signal<DepartmentResponse[]>([]);
   roles = Role;
 
-  showCreateModal = false;
-  showEditModal = false;
+  showCreateModal = signal<boolean>(false);
+  showEditModal = signal<boolean>(false);
   isSubmitting = false;
-  editingEmployee: EmployeeResponse | null = null;
+  editingEmployee = signal<EmployeeResponse | null>(null);
 
   createForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -219,22 +219,22 @@ export class EmployeeListComponent implements OnInit {
   }
 
   loadEmployees() {
-    this.employeeService.getEmployees().subscribe(e => this.employees = e);
+    this.employeeService.getEmployees().subscribe(e => this.employees.set(e));
   }
 
   loadDepartments() {
     this.departmentService.getDepartments().subscribe(d => {
-      this.departments = d;
+      this.departments.set(d);
       if (d.length > 0) this.createForm.patchValue({ department_id: d[0].id });
     });
   }
 
   openCreateModal() {
-    this.showCreateModal = true;
+    this.showCreateModal.set(true);
   }
 
   closeCreateModal() {
-    this.showCreateModal = false;
+    this.showCreateModal.set(false);
   }
 
   submitCreateEmployee() {
@@ -263,26 +263,27 @@ export class EmployeeListComponent implements OnInit {
   }
 
   openEditModal(emp: EmployeeResponse) {
-    this.editingEmployee = emp;
+    this.editingEmployee.set(emp);
     this.editForm.patchValue({
       designation: emp.designation,
       age: emp.age
     });
-    this.showEditModal = true;
+    this.showEditModal.set(true);
   }
 
   closeEditModal() {
-    this.showEditModal = false;
-    this.editingEmployee = null;
+    this.showEditModal.set(false);
+    this.editingEmployee.set(null);
   }
 
   submitEditEmployee() {
-    if (!this.editingEmployee || this.editForm.invalid) return;
+    const emp = this.editingEmployee();
+    if (!emp || this.editForm.invalid) return;
 
     this.isSubmitting = true;
     const formVal = this.editForm.value;
 
-    this.employeeService.updateEmployee(this.editingEmployee.id, {
+    this.employeeService.updateEmployee(emp.id, {
       designation: formVal.designation!,
       age: Number(formVal.age)
     }).subscribe({

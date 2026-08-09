@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
@@ -17,7 +17,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
   standalone: true,
   imports: [CommonModule, RouterModule, DragDropModule, StatusBadgeComponent, SvgIconComponent],
   template: `
-    <div *ngIf="project" class="project-detail-page">
+    <div *ngIf="project()" class="project-detail-page">
       <!-- Breadcrumb Nav -->
       <a routerLink="/projects" class="back-link">← Back to Projects</a>
 
@@ -26,15 +26,15 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
         <div class="banner-top">
           <div>
             <div class="title-row">
-              <h2>{{ project.name }}</h2>
-              <app-status-badge [type]="project.status"></app-status-badge>
+              <h2>{{ project()?.name }}</h2>
+              <app-status-badge *ngIf="project()?.status" [type]="project()!.status"></app-status-badge>
             </div>
-            <p class="desc-text">{{ project.description || 'No project description provided.' }}</p>
+            <p class="desc-text">{{ project()?.description || 'No project description provided.' }}</p>
           </div>
 
           <div *ngIf="authService.isAdminOrManager()" class="status-edit-box">
             <label class="form-label">Project Status</label>
-            <select class="form-select" [value]="project.status" (change)="onStatusChange($event)">
+            <select class="form-select" [value]="project()?.status" (change)="onStatusChange($event)">
               <option [value]="statuses.PLANNING">PLANNING</option>
               <option [value]="statuses.ACTIVE">ACTIVE</option>
               <option [value]="statuses.ON_HOLD">ON_HOLD</option>
@@ -47,40 +47,40 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
         <div class="project-tabs">
           <button
             class="tab-btn"
-            [class.active]="activeTab === 'overview'"
-            (click)="activeTab = 'overview'"
+            [class.active]="activeTab() === 'overview'"
+            (click)="activeTab.set('overview')"
           >
             Overview
           </button>
 
           <button
             class="tab-btn"
-            [class.active]="activeTab === 'tasks'"
-            (click)="activeTab = 'tasks'"
+            [class.active]="activeTab() === 'tasks'"
+            (click)="activeTab.set('tasks')"
           >
-            Tasks ({{ issues.length }})
+            Tasks ({{ issues().length }})
           </button>
 
           <button
             class="tab-btn"
-            [class.active]="activeTab === 'kanban'"
-            (click)="activeTab = 'kanban'"
+            [class.active]="activeTab() === 'kanban'"
+            (click)="activeTab.set('kanban')"
           >
             Kanban Board
           </button>
 
           <button
             class="tab-btn"
-            [class.active]="activeTab === 'team'"
-            (click)="activeTab = 'team'"
+            [class.active]="activeTab() === 'team'"
+            (click)="activeTab.set('team')"
           >
-            Team Members ({{ members.length }})
+            Team Members ({{ members().length }})
           </button>
         </div>
       </div>
 
       <!-- TAB 1: OVERVIEW -->
-      <div *ngIf="activeTab === 'overview'" class="tab-content overview-grid">
+      <div *ngIf="activeTab() === 'overview'" class="tab-content overview-grid">
         <div class="panel content-panel">
           <div class="panel-header">
             <h3>Project Summary & Metrics</h3>
@@ -88,37 +88,37 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
           <div class="info-rows-list">
             <div class="info-item">
               <span class="info-lbl">Project ID</span>
-              <span class="info-val">#{{ project.id }}</span>
+              <span class="info-val">#{{ project()?.id }}</span>
             </div>
             <div class="info-item">
               <span class="info-lbl">Owner ID</span>
-              <span class="info-val">Emp #{{ project.owner_id }}</span>
+              <span class="info-val">Emp #{{ project()?.owner_id }}</span>
             </div>
             <div class="info-item">
               <span class="info-lbl">Created On</span>
-              <span class="info-val">{{ project.created_at | date:'medium' }}</span>
+              <span class="info-val">{{ project()?.created_at | date:'medium' }}</span>
             </div>
             <div class="info-item">
               <span class="info-lbl">Last Updated</span>
-              <span class="info-val">{{ project.updated_at | date:'medium' }}</span>
+              <span class="info-val">{{ project()?.updated_at | date:'medium' }}</span>
             </div>
             <div class="info-item">
               <span class="info-lbl">Total Tasks Logged</span>
-              <span class="info-val">{{ issues.length }}</span>
+              <span class="info-val">{{ issues().length }}</span>
             </div>
           </div>
         </div>
 
         <div class="panel content-panel">
           <div class="panel-header">
-            <h3>Assigned Team ({{ members.length }})</h3>
+            <h3>Assigned Team ({{ members().length }})</h3>
           </div>
           <div class="team-chips-list">
-            <div *ngFor="let member of members" class="member-chip-box">
+            <div *ngFor="let member of members()" class="member-chip-box">
               <span class="member-name">{{ member.user.name }}</span>
               <span class="member-sub">{{ member.designation }}</span>
             </div>
-            <div *ngIf="members.length === 0" class="text-muted text-xs font-italic">
+            <div *ngIf="members().length === 0" class="text-muted text-xs font-italic">
               No team members assigned yet.
             </div>
           </div>
@@ -126,7 +126,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- TAB 2: TASKS TABLE LIST -->
-      <div *ngIf="activeTab === 'tasks'" class="tab-content">
+      <div *ngIf="activeTab() === 'tasks'" class="tab-content">
         <div class="table-wrapper panel">
           <table class="data-table">
             <thead>
@@ -141,7 +141,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let issue of issues">
+              <tr *ngFor="let issue of issues()">
                 <td class="font-semibold">#{{ issue.id }}</td>
                 <td class="font-semibold">{{ issue.title }}</td>
                 <td class="text-muted">{{ issue.issue_type }}</td>
@@ -150,7 +150,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
                 <td>Emp #{{ issue.assignee_id }}</td>
                 <td class="text-muted">{{ issue.updated_at | date:'shortDate' }}</td>
               </tr>
-              <tr *ngIf="issues.length === 0">
+              <tr *ngIf="issues().length === 0">
                 <td colspan="7" class="text-center py-4 text-muted">No tasks logged for this project.</td>
               </tr>
             </tbody>
@@ -159,9 +159,9 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- TAB 3: KANBAN BOARD -->
-      <div *ngIf="activeTab === 'kanban'" class="tab-content">
+      <div *ngIf="activeTab() === 'kanban'" class="tab-content">
         <div class="kanban-columns-container" cdkDropListGroup>
-          <div *ngFor="let col of kanbanColumns" class="kanban-col panel">
+          <div *ngFor="let col of kanbanColumns()" class="kanban-col panel">
             <div class="col-header">
               <span class="col-title">{{ col.title }}</span>
               <span class="col-badge">{{ col.issues.length }}</span>
@@ -192,7 +192,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- TAB 4: TEAM MEMBERS -->
-      <div *ngIf="activeTab === 'team'" class="tab-content">
+      <div *ngIf="activeTab() === 'team'" class="tab-content">
         <div class="table-wrapper panel">
           <table class="data-table">
             <thead>
@@ -204,13 +204,13 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let m of members">
+              <tr *ngFor="let m of members()">
                 <td class="font-semibold">{{ m.user.name }}</td>
                 <td class="text-muted">{{ m.user.email }}</td>
                 <td>{{ m.designation }}</td>
                 <td><app-status-badge [type]="m.user.role"></app-status-badge></td>
               </tr>
-              <tr *ngIf="members.length === 0">
+              <tr *ngIf="members().length === 0">
                 <td colspan="4" class="text-center py-4 text-muted">No members assigned to this project.</td>
               </tr>
             </tbody>
@@ -292,21 +292,21 @@ export class ProjectDetailComponent implements OnInit {
   authService = inject(AuthService);
 
   projectId!: number;
-  project: ProjectResponse | null = null;
-  issues: IssueResponse[] = [];
-  members: EmployeeResponse[] = [];
+  project = signal<ProjectResponse | null>(null);
+  issues = signal<IssueResponse[]>([]);
+  members = signal<EmployeeResponse[]>([]);
   statuses = ProjectStatus;
 
-  activeTab: 'overview' | 'tasks' | 'kanban' | 'team' = 'overview';
+  activeTab = signal<'overview' | 'tasks' | 'kanban' | 'team'>('overview');
 
-  kanbanColumns: { title: string; status: IssueStatus; issues: IssueResponse[] }[] = [
+  kanbanColumns = signal<{ title: string; status: IssueStatus; issues: IssueResponse[] }[]>([
     { title: 'Backlog', status: IssueStatus.BACKLOG, issues: [] },
     { title: 'To Do', status: IssueStatus.TODO, issues: [] },
     { title: 'In Progress', status: IssueStatus.IN_PROGRESS, issues: [] },
     { title: 'Review', status: IssueStatus.REVIEW, issues: [] },
     { title: 'Testing', status: IssueStatus.TESTING, issues: [] },
     { title: 'Done', status: IssueStatus.DONE, issues: [] }
-  ];
+  ]);
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -316,20 +316,23 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   loadProject() {
-    this.projectService.getProjectById(this.projectId).subscribe(p => this.project = p);
+    this.projectService.getProjectById(this.projectId).subscribe(p => this.project.set(p));
 
     this.issueService.getProjectIssues(this.projectId).subscribe(issues => {
-      this.issues = issues;
+      this.issues.set(issues);
       this.distributeKanban(issues);
     });
 
-    this.projectService.getProjectMembers(this.projectId).subscribe(m => this.members = m);
+    this.projectService.getProjectMembers(this.projectId).subscribe(m => this.members.set(m));
   }
 
   distributeKanban(issues: IssueResponse[]) {
-    this.kanbanColumns.forEach(col => {
-      col.issues = issues.filter(i => i.status === col.status);
-    });
+    this.kanbanColumns.update(cols =>
+      cols.map(col => ({
+        ...col,
+        issues: issues.filter(i => i.status === col.status)
+      }))
+    );
   }
 
   onDrop(event: CdkDragDrop<IssueResponse[]>, targetStatus: IssueStatus) {
@@ -356,10 +359,11 @@ export class ProjectDetailComponent implements OnInit {
 
   onStatusChange(event: any) {
     const newStatus = event.target.value as ProjectStatus;
-    if (!this.project) return;
+    const proj = this.project();
+    if (!proj) return;
 
-    this.projectService.updateProject(this.project.id, { status: newStatus }).subscribe(updated => {
-      this.project = updated;
+    this.projectService.updateProject(proj.id, { status: newStatus }).subscribe(updated => {
+      this.project.set(updated);
       this.toast.success(`Project status updated to ${newStatus}`);
     });
   }

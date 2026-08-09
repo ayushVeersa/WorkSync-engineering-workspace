@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -53,7 +53,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let project of projects">
+            <tr *ngFor="let project of projects()">
               <td>
                 <div class="proj-name-cell">
                   <a [routerLink]="['/projects', project.id]" class="proj-title-link">
@@ -81,7 +81,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
               </td>
             </tr>
 
-            <tr *ngIf="projects.length === 0">
+            <tr *ngIf="projects().length === 0">
               <td colspan="5" class="text-center py-4 text-muted">
                 No active projects found.
               </td>
@@ -91,7 +91,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Create Project Modal -->
-      <div *ngIf="showCreateModal" class="modal-backdrop" (click)="closeCreateModal()">
+      <div *ngIf="showCreateModal()" class="modal-backdrop" (click)="closeCreateModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
           <h3>Create New Project</h3>
 
@@ -125,15 +125,15 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
       </div>
 
       <!-- Manage Members Modal -->
-      <div *ngIf="showMembersModal && selectedProject" class="modal-backdrop" (click)="closeMembersModal()">
+      <div *ngIf="showMembersModal() && selectedProject()" class="modal-backdrop" (click)="closeMembersModal()">
         <div class="modal-dialog" (click)="$event.stopPropagation()">
-          <h3>Team Members — {{ selectedProject.name }}</h3>
+          <h3>Team Members — {{ selectedProject()?.name }}</h3>
 
           <!-- Current Members List -->
           <div class="members-stack">
-            <label class="form-label">Assigned Members ({{ currentMembers.length }})</label>
+            <label class="form-label">Assigned Members ({{ currentMembers().length }})</label>
             <div class="members-list">
-              <div *ngFor="let member of currentMembers" class="member-row">
+              <div *ngFor="let member of currentMembers()" class="member-row">
                 <div class="member-info">
                   <span class="member-name">{{ member.user.name }}</span>
                   <span class="member-sub">{{ member.designation }} • {{ member.user.email }}</span>
@@ -143,7 +143,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
                 </button>
               </div>
 
-              <div *ngIf="currentMembers.length === 0" class="text-muted text-xs font-italic">
+              <div *ngIf="currentMembers().length === 0" class="text-muted text-xs font-italic">
                 No team members assigned to this project yet.
               </div>
             </div>
@@ -155,7 +155,7 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
             <div class="flex-row">
               <select class="form-select" [(ngModel)]="selectedEmployeeId">
                 <option [value]="null">Select Employee...</option>
-                <option *ngFor="let emp of allEmployees" [value]="emp.id">
+                <option *ngFor="let emp of allEmployees()" [value]="emp.id">
                   {{ emp.user.name }} ({{ emp.designation }})
                 </option>
               </select>
@@ -214,15 +214,15 @@ export class ProjectListComponent implements OnInit {
   private fb = inject(FormBuilder);
   authService = inject(AuthService);
 
-  projects: ProjectResponse[] = [];
+  projects = signal<ProjectResponse[]>([]);
   statuses = ProjectStatus;
-  showCreateModal = false;
-  showMembersModal = false;
+  showCreateModal = signal<boolean>(false);
+  showMembersModal = signal<boolean>(false);
   isSubmitting = false;
 
-  selectedProject: ProjectResponse | null = null;
-  currentMembers: EmployeeResponse[] = [];
-  allEmployees: EmployeeResponse[] = [];
+  selectedProject = signal<ProjectResponse | null>(null);
+  currentMembers = signal<EmployeeResponse[]>([]);
+  allEmployees = signal<EmployeeResponse[]>([]);
   selectedEmployeeId: number | null = null;
 
   projectForm = this.fb.group({
@@ -236,16 +236,16 @@ export class ProjectListComponent implements OnInit {
   }
 
   loadProjects() {
-    this.projectService.getProjects().subscribe(p => this.projects = p);
+    this.projectService.getProjects().subscribe(p => this.projects.set(p));
   }
 
   openCreateModal() {
     this.projectForm.reset({ status: ProjectStatus.PLANNING });
-    this.showCreateModal = true;
+    this.showCreateModal.set(true);
   }
 
   closeCreateModal() {
-    this.showCreateModal = false;
+    this.showCreateModal.set(false);
   }
 
   submitCreateProject() {
@@ -270,45 +270,47 @@ export class ProjectListComponent implements OnInit {
   }
 
   openMembersModal(project: ProjectResponse) {
-    this.selectedProject = project;
-    this.showMembersModal = true;
+    this.selectedProject.set(project);
+    this.showMembersModal.set(true);
     this.loadProjectMembers(project.id);
     this.loadAllEmployees();
   }
 
   closeMembersModal() {
-    this.showMembersModal = false;
-    this.selectedProject = null;
+    this.showMembersModal.set(false);
+    this.selectedProject.set(null);
     this.selectedEmployeeId = null;
   }
 
   loadProjectMembers(projectId: number) {
-    this.projectService.getProjectMembers(projectId).subscribe(m => this.currentMembers = m);
+    this.projectService.getProjectMembers(projectId).subscribe(m => this.currentMembers.set(m));
   }
 
   loadAllEmployees() {
-    this.employeeService.getEmployees().subscribe(e => this.allEmployees = e);
+    this.employeeService.getEmployees().subscribe(e => this.allEmployees.set(e));
   }
 
   addMemberToProject() {
-    if (!this.selectedProject || !this.selectedEmployeeId) return;
+    const proj = this.selectedProject();
+    if (!proj || !this.selectedEmployeeId) return;
 
-    this.projectService.assignMember(this.selectedProject.id, Number(this.selectedEmployeeId)).subscribe({
+    this.projectService.assignMember(proj.id, Number(this.selectedEmployeeId)).subscribe({
       next: () => {
         this.toast.success('Team member assigned to project!');
-        this.loadProjectMembers(this.selectedProject!.id);
+        this.loadProjectMembers(proj.id);
         this.selectedEmployeeId = null;
       }
     });
   }
 
   removeMemberFromProject(employeeId: number) {
-    if (!this.selectedProject) return;
+    const proj = this.selectedProject();
+    if (!proj) return;
 
-    this.projectService.removeMember(this.selectedProject.id, employeeId).subscribe({
+    this.projectService.removeMember(proj.id, employeeId).subscribe({
       next: () => {
         this.toast.info('Member removed from project.');
-        this.loadProjectMembers(this.selectedProject!.id);
+        this.loadProjectMembers(proj.id);
       }
     });
   }
