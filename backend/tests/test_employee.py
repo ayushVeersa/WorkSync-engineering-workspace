@@ -90,6 +90,37 @@ def test_get_employees(db, make_department, make_user, make_employee):
     assert len(employees) == 2
 
 
+def test_get_employees_search_and_filters(db, make_department, make_user, make_employee):
+    dept1 = make_department(name="CSE")
+    dept2 = make_department(name="EEE")
+    u1 = make_user(name="Alice", email="alice@test.com")
+    u2 = make_user(name="Bob", email="bob@test.com")
+    u3 = make_user(name="Carol", email="carol@test.com")
+    make_employee(u1, dept1.id, designation="Engineer")
+    make_employee(u2, dept1.id, designation="Manager")
+    make_employee(u3, dept2.id, designation="Engineer")
+
+    # search by user name
+    assert len(get_employees(db, search="ali")) == 1
+    assert get_employees(db, search="ali")[0].user.name == "Alice"
+
+    # search by designation
+    assert len(get_employees(db, search="engineer")) == 2
+    assert len(get_employees(db, search="manager")) == 1
+
+    # filter by department
+    assert len(get_employees(db, department_id=dept1.id)) == 2
+    assert len(get_employees(db, department_id=dept2.id)) == 1
+
+    # combined search + department
+    assert len(get_employees(db, search="engineer", department_id=dept1.id)) == 1
+    assert len(get_employees(db, search="engineer", department_id=dept2.id)) == 1
+
+    # pagination
+    assert len(get_employees(db, skip=0, limit=2)) == 2
+    assert len(get_employees(db, skip=2, limit=2)) == 1
+
+
 def test_update_employee(db, make_department, make_user, make_employee):
     dept = make_department(name="CSE")
     user = make_user(email="a@test.com")

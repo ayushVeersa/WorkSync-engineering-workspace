@@ -151,6 +151,68 @@ def test_get_all_issues_filters(db, make_department, make_user, make_employee, m
     assert len(get_all_issues(db, status=IssueStatus.DONE)) == 0
 
 
+def test_get_all_issues_search_and_filters(db, make_department, make_user, make_employee, make_project, assign, make_issue):
+    dept = make_department(name="CSE")
+    u1 = make_user(email="a@test.com")
+    u2 = make_user(email="b@test.com")
+    emp1 = make_employee(u1, dept.id)
+    emp2 = make_employee(u2, dept.id)
+    project = make_project("Project A", emp1.id)
+    assign(emp2.id, project.id)
+
+    make_issue(
+        title="Login Bug",
+        project_id=project.id,
+        assignee_id=emp2.id,
+        reporter_id=emp1.id,
+        status=IssueStatus.IN_PROGRESS,
+        priority=IssuePriority.HIGH,
+        issue_type=IssueType.BUG,
+    )
+    make_issue(
+        title="Payment Task",
+        project_id=project.id,
+        assignee_id=emp2.id,
+        reporter_id=emp1.id,
+        status=IssueStatus.TODO,
+        priority=IssuePriority.LOW,
+        issue_type=IssueType.TASK,
+    )
+    make_issue(
+        title="Auth Story",
+        project_id=project.id,
+        assignee_id=emp2.id,
+        reporter_id=emp1.id,
+        status=IssueStatus.DONE,
+        priority=IssuePriority.MEDIUM,
+        issue_type=IssueType.STORY,
+    )
+
+    # search by title
+    assert len(get_all_issues(db, search="log")) == 1
+    assert get_all_issues(db, search="log")[0].title == "Login Bug"
+
+    # search by description (default "Issue description" for all created issues)
+    assert len(get_all_issues(db, search="issue description")) == 3
+
+    # filter by issue_type
+    assert len(get_all_issues(db, issue_type=IssueType.BUG)) == 1
+    assert len(get_all_issues(db, issue_type=IssueType.TASK)) == 1
+    assert len(get_all_issues(db, issue_type=IssueType.STORY)) == 1
+
+    # filter by assignee
+    assert len(get_all_issues(db, assignee_id=emp2.id)) == 3
+    assert len(get_all_issues(db, assignee_id=999)) == 0
+
+    # combined filters
+    assert len(get_all_issues(db, status=IssueStatus.DONE, issue_type=IssueType.STORY)) == 1
+    assert len(get_all_issues(db, status=IssueStatus.DONE, issue_type=IssueType.BUG)) == 0
+
+    # pagination
+    assert len(get_all_issues(db, skip=0, limit=2)) == 2
+    assert len(get_all_issues(db, skip=2, limit=2)) == 1
+
+
 def test_get_project_issues(db, make_department, make_user, make_employee, make_project, assign, make_issue):
     dept = make_department(name="CSE")
     u1 = make_user(email="a@test.com")

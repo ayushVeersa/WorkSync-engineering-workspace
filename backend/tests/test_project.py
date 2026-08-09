@@ -34,6 +34,34 @@ def test_get_projects_empty(db):
     assert get_projects(db) == []
 
 
+def test_projects_search_and_filters(db, make_department, make_user, make_employee, make_project):
+    dept = make_department(name="CSE")
+    u1 = make_user(email="owner@test.com")
+    emp = make_employee(u1, dept.id)
+
+    make_project("Alpha Service", emp.id, status=ProjectStatus.ACTIVE)
+    make_project("Beta Service", emp.id, status=ProjectStatus.PLANNING)
+    make_project("Gamma App", emp.id, status=ProjectStatus.ACTIVE)
+
+    # search by name
+    assert len(get_projects(db, search="service")) == 2
+    assert len(get_projects(db, search="alpha")) == 1
+    assert get_projects(db, search="alpha")[0].name == "Alpha Service"
+
+    # filter by status
+    assert len(get_projects(db, status=ProjectStatus.ACTIVE)) == 2
+    assert len(get_projects(db, status=ProjectStatus.PLANNING)) == 1
+    assert len(get_projects(db, status=ProjectStatus.COMPLETED)) == 0
+
+    # combined search + status
+    assert len(get_projects(db, search="service", status=ProjectStatus.ACTIVE)) == 1
+    assert get_projects(db, search="service", status=ProjectStatus.ACTIVE)[0].name == "Alpha Service"
+
+    # pagination
+    assert len(get_projects(db, skip=0, limit=2)) == 2
+    assert len(get_projects(db, skip=2, limit=2)) == 1
+
+
 def test_get_project_not_found(db):
     with pytest.raises(HTTPException) as exc:
         get_project(db, 999)
