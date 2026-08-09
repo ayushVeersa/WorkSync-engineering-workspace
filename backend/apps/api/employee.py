@@ -34,6 +34,8 @@ router = APIRouter(
 def get_all_employees(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=100),
+    search: str | None = Query(default=None, description="Search by name or designation"),
+    department_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
     _ = Depends(get_current_user),
 ):
@@ -41,7 +43,7 @@ def get_all_employees(
     Get all Employee if you are an ADMIN or MANAGER
     """
     #Later: Manager can get employees of their own dept. only
-    return get_employees(db, skip, limit)
+    return get_employees(db, skip, limit, search=search, department_id=department_id)
 
 
 @router.get("/me", response_model=EmployeeResponse)

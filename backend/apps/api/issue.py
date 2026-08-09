@@ -18,6 +18,7 @@ from apps.schemas.issue import (
     IssueResponse,
     IssueStatus,
     IssuePriority,
+    IssueType,
 )
 from apps.schemas.employee import EmployeeResponse
 from apps.services.employee import get_employee_by_user_id
@@ -47,6 +48,12 @@ router = APIRouter(
 def get_all(
     status: IssueStatus | None = Query(default=None),
     priority: IssuePriority | None = Query(default=None),
+    issue_type: IssueType | None = Query(default=None),
+    assignee_id: int | None = Query(default=None),
+    project_id: int | None = Query(default=None),
+    search: str | None = Query(default=None, description="Search by title or description"),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     _: User = Depends(
         require_roles(
@@ -60,6 +67,12 @@ def get_all(
         db=db,
         status=status,
         priority=priority,
+        issue_type=issue_type,
+        assignee_id=assignee_id,
+        project_id=project_id,
+        search=search,
+        skip=skip,
+        limit=limit,
     )
 
 

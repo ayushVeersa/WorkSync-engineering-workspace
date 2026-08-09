@@ -54,17 +54,41 @@ def get_employee_by_user_id(
     return employee
 
 
-def get_employees(db: Session, skip: int = 0, limit: int = 10):
-
-    employees = (
+def get_employees(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
+    department_id: int | None = None,
+):
+    query = (
         db.query(Employee)
         .filter(Employee.is_active.is_(True))
-        .offset(skip)
+    )
+
+    if search:
+        query = query.join(Employee.user).filter(
+            User.name.ilike(f"%{search}%")
+            | Employee.designation.ilike(f"%{search}%")
+        )
+
+    if department_id is not None:
+        query = query.filter(Employee.department_id == department_id)
+
+    employees = (
+        query.offset(skip)
         .limit(limit)
         .all()
     )
 
-    logger.info("Fetched employees list, count=%s, skip=%s, limit=%s", len(employees), skip, limit)
+    logger.info(
+        "Fetched employees list, count=%s, skip=%s, limit=%s, search=%s, department_id=%s",
+        len(employees),
+        skip,
+        limit,
+        search,
+        department_id,
+    )
     return employees
 
 

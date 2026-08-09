@@ -9,7 +9,8 @@ from apps.schemas.issue import (
     IssueCreate,
     IssueUpdate,
     IssueStatus,
-    IssuePriority
+    IssuePriority,
+    IssueType,
 )
 from apps.core.logging import get_logger
 
@@ -40,6 +41,12 @@ def get_all_issues(
     db: Session,
     status: IssueStatus | None = None,
     priority: IssuePriority | None = None,
+    issue_type: IssueType | None = None,
+    assignee_id: int | None = None,
+    project_id: int | None = None,
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
 ):
     query = db.query(Issue)
 
@@ -49,8 +56,35 @@ def get_all_issues(
     if priority is not None:
         query = query.filter(Issue.priority == priority)
 
-    issues = query.all()
-    logger.info("Fetched all issues, count=%s, status=%s, priority=%s", len(issues), status, priority)
+    if issue_type is not None:
+        query = query.filter(Issue.issue_type == issue_type)
+
+    if assignee_id is not None:
+        query = query.filter(Issue.assignee_id == assignee_id)
+
+    if project_id is not None:
+        query = query.filter(Issue.project_id == project_id)
+
+    if search:
+        query = query.filter(
+            Issue.title.ilike(f"%{search}%")
+            | Issue.description.ilike(f"%{search}%")
+        )
+
+    issues = query.offset(skip).limit(limit).all()
+    logger.info(
+        "Fetched all issues, count=%s, status=%s, priority=%s, issue_type=%s, "
+        "assignee_id=%s, project_id=%s, search=%s, skip=%s, limit=%s",
+        len(issues),
+        status,
+        priority,
+        issue_type,
+        assignee_id,
+        project_id,
+        search,
+        skip,
+        limit,
+    )
     return issues
 
 

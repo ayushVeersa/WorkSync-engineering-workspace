@@ -5,15 +5,37 @@ from apps.models.project import Project
 from apps.schemas.project import (
     ProjectCreate,
     ProjectUpdate,
+    ProjectStatus,
 )
 from apps.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def get_projects(db: Session):
-    projects = db.query(Project).all()
-    logger.info("Fetched all projects, count=%s", len(projects))
+def get_projects(
+    db: Session,
+    search: str | None = None,
+    status: ProjectStatus | None = None,
+    skip: int = 0,
+    limit: int = 100,
+):
+    query = db.query(Project)
+
+    if search:
+        query = query.filter(Project.name.ilike(f"%{search}%"))
+
+    if status is not None:
+        query = query.filter(Project.status == status)
+
+    projects = query.offset(skip).limit(limit).all()
+    logger.info(
+        "Fetched all projects, count=%s, search=%s, status=%s, skip=%s, limit=%s",
+        len(projects),
+        search,
+        status,
+        skip,
+        limit,
+    )
     return projects
 
 
