@@ -60,6 +60,10 @@ export class AuthService {
     );
   }
 
+  ensureCurrentUser(): Observable<UserResponse | null> {
+    return this.currentUser() ? of(this.currentUser()) : this.fetchCurrentUser();
+  }
+
   logout(showToast = true) {
     localStorage.removeItem(this.TOKEN_KEY);
     this.token.set(null);

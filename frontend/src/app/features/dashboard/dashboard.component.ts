@@ -381,11 +381,13 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.getSummary().subscribe(s => this.summary = s);
     this.issueService.getIssues().subscribe(issues => this.recentTasks = issues.slice(0, 8));
 
-    if (this.authService.isAdminOrManager()) {
-      this.dashboardService.getMyWork().subscribe(w => this.myWork = w);
-      this.dashboardService.getIssuesByStatus().subscribe(st => this.statusSummary = st);
-      this.dashboardService.getProjectOverview().subscribe(p => this.projectOverview = p);
-    }
+    this.authService.ensureCurrentUser().subscribe(user => {
+      if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+        this.dashboardService.getMyWork().subscribe(w => this.myWork = w);
+        this.dashboardService.getIssuesByStatus().subscribe(st => this.statusSummary = st);
+        this.dashboardService.getProjectOverview().subscribe(p => this.projectOverview = p);
+      }
+    });
   }
 
   calcPercentage(count: number, total?: number): number {
