@@ -1,0 +1,53 @@
+<div class="auth-page">
+    <div class="auth-box panel">
+        <div class="auth-header">
+            <div class="brand-badge">WorkSync</div>
+            <h2>Create Workspace Account</h2>
+            <p class="auth-sub">Register an initial administrator account</p>
+        </div>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+                <label class="form-label" for="name">Full Name *</label>
+                <input id="name" type="text" class="form-control" formControlName="name" placeholder="Sarah Connor" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email">Work Email *</label>
+                <input id="email" type="email" class="form-control" formControlName="email"
+                    placeholder="sarah@worksync.io" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="age">Age</label>
+                    <input id="age" type="number" class="form-control" formControlName="age" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="role">Role</label>
+                    <select id="role" class="form-select" formControlName="role">
+                        <option [value]="roles.ADMIN">ADMIN</option>
+                        <option [value]="roles.MANAGER">MANAGER</option>
+                        <option [value]="roles.EMPLOYEE">EMPLOYEE</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password *</label>
+                <input id="password" type="password" class="form-control" formControlName="password"
+                    placeholder="••••••••" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="registerForm.invalid || isLoading">
+                <span *ngIf="!isLoading">Register Account</span>
+                <span *ngIf="isLoading">Registering...</span>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already registered? <a routerLink="/auth/login">Back to Sign In</a></p>
+        </div>
+    </div>
+</div>

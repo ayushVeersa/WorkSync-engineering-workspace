@@ -1,0 +1,36 @@
+    .departments-page {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-header h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .text-sm {
+        font-size: 0.8rem;
+    }
+
+    .text-muted {
+        color: var(--text-muted);
+    }
+
+    .actions-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }

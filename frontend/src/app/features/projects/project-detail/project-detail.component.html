@@ -1,0 +1,181 @@
+<div *ngIf="project()" class="project-detail-page">
+    <!-- Breadcrumb Nav -->
+    <a routerLink="/projects" class="back-link">← Back to Projects</a>
+
+    <!-- Banner Header Panel -->
+    <div class="panel banner-panel">
+        <div class="banner-top">
+            <div>
+                <div class="title-row">
+                    <h2>{{ project()?.name }}</h2>
+                    <app-status-badge *ngIf="project()?.status" [type]="project()!.status"></app-status-badge>
+                </div>
+                <p class="desc-text">{{ project()?.description || 'No project description provided.' }}</p>
+            </div>
+
+            <div *ngIf="authService.isAdminOrManager()" class="status-edit-box">
+                <label class="form-label">Project Status</label>
+                <select class="form-select" [value]="project()?.status" (change)="onStatusChange($event)">
+                    <option [value]="statuses.PLANNING">PLANNING</option>
+                    <option [value]="statuses.ACTIVE">ACTIVE</option>
+                    <option [value]="statuses.ON_HOLD">ON_HOLD</option>
+                    <option [value]="statuses.COMPLETED">COMPLETED</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabbed Navigation Bar -->
+        <div class="project-tabs">
+            <button class="tab-btn" [class.active]="activeTab() === 'overview'" (click)="activeTab.set('overview')">
+                Overview
+            </button>
+
+            <button class="tab-btn" [class.active]="activeTab() === 'tasks'" (click)="activeTab.set('tasks')">
+                Tasks ({{ issues().length }})
+            </button>
+
+            <button class="tab-btn" [class.active]="activeTab() === 'kanban'" (click)="activeTab.set('kanban')">
+                Kanban Board
+            </button>
+
+            <button class="tab-btn" [class.active]="activeTab() === 'team'" (click)="activeTab.set('team')">
+                Team Members ({{ members().length }})
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB 1: OVERVIEW -->
+    <div *ngIf="activeTab() === 'overview'" class="tab-content overview-grid">
+        <div class="panel content-panel">
+            <div class="panel-header">
+                <h3>Project Summary & Metrics</h3>
+            </div>
+            <div class="info-rows-list">
+                <div class="info-item">
+                    <span class="info-lbl">Project ID</span>
+                    <span class="info-val">#{{ project()?.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">Owner ID</span>
+                    <span class="info-val">Emp #{{ project()?.owner_id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">Created On</span>
+                    <span class="info-val">{{ project()?.created_at | date:'medium' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">Last Updated</span>
+                    <span class="info-val">{{ project()?.updated_at | date:'medium' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">Total Tasks Logged</span>
+                    <span class="info-val">{{ issues().length }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel content-panel">
+            <div class="panel-header">
+                <h3>Assigned Team ({{ members().length }})</h3>
+            </div>
+            <div class="team-chips-list">
+                <div *ngFor="let member of members()" class="member-chip-box">
+                    <span class="member-name">{{ member.user.name }}</span>
+                    <span class="member-sub">{{ member.designation }}</span>
+                </div>
+                <div *ngIf="members().length === 0" class="text-muted text-xs font-italic">
+                    No team members assigned yet.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: TASKS TABLE LIST -->
+    <div *ngIf="activeTab() === 'tasks'" class="tab-content">
+        <div class="table-wrapper panel">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Assignee</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let issue of issues()">
+                        <td class="font-semibold">#{{ issue.id }}</td>
+                        <td class="font-semibold">{{ issue.title }}</td>
+                        <td class="text-muted">{{ issue.issue_type }}</td>
+                        <td><app-status-badge [type]="issue.priority"></app-status-badge></td>
+                        <td><app-status-badge [type]="issue.status"></app-status-badge></td>
+                        <td>Emp #{{ issue.assignee_id }}</td>
+                        <td class="text-muted">{{ issue.updated_at | date:'shortDate' }}</td>
+                    </tr>
+                    <tr *ngIf="issues().length === 0">
+                        <td colspan="7" class="text-center py-4 text-muted">No tasks logged for this project.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: KANBAN BOARD -->
+    <div *ngIf="activeTab() === 'kanban'" class="tab-content">
+        <div class="kanban-columns-container" cdkDropListGroup>
+            <div *ngFor="let col of kanbanColumns()" class="kanban-col panel">
+                <div class="col-header">
+                    <span class="col-title">{{ col.title }}</span>
+                    <span class="col-badge">{{ col.issues.length }}</span>
+                </div>
+
+                <div cdkDropList [cdkDropListData]="col.issues" (cdkDropListDropped)="onDrop($event, col.status)"
+                    class="task-drop-list">
+                    <div *ngFor="let issue of col.issues" cdkDrag class="task-card">
+                        <div class="card-meta-top">
+                            <span class="task-key">#{{ issue.id }}</span>
+                            <app-status-badge [type]="issue.priority"></app-status-badge>
+                        </div>
+                        <h4 class="task-card-title">{{ issue.title }}</h4>
+                        <div class="card-meta-bottom">
+                            <span class="type-tag">{{ issue.issue_type }}</span>
+                            <span>Emp #{{ issue.assignee_id }}</span>
+                        </div>
+                    </div>
+
+                    <div *ngIf="col.issues.length === 0" class="empty-drop-zone">No {{ col.title }} tasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: TEAM MEMBERS -->
+    <div *ngIf="activeTab() === 'team'" class="tab-content">
+        <div class="table-wrapper panel">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Work Email</th>
+                        <th>Designation</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let m of members()">
+                        <td class="font-semibold">{{ m.user.name }}</td>
+                        <td class="text-muted">{{ m.user.email }}</td>
+                        <td>{{ m.designation }}</td>
+                        <td><app-status-badge [type]="m.user.role"></app-status-badge></td>
+                    </tr>
+                    <tr *ngIf="members().length === 0">
+                        <td colspan="4" class="text-center py-4 text-muted">No members assigned to this project.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

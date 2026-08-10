@@ -1,0 +1,58 @@
+<aside class="sidebar-container" [class.mobile-open]="mobileOpen">
+    <div class="sidebar-header">
+        <div class="logo-box">WS</div>
+        <div class="brand-info">
+            <span class="brand-name">WorkSync</span>
+            <span class="brand-tag">Enterprise v2.4</span>
+        </div>
+    </div>
+
+    <nav class="nav-section">
+        <div class="nav-group-title">WORKSPACE</div>
+
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
+            <app-svg-icon name="dashboard" [size]="16"></app-svg-icon>
+            <span>Dashboard</span>
+        </a>
+
+        <a routerLink="/projects" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
+            <app-svg-icon name="projects" [size]="16"></app-svg-icon>
+            <span>Projects</span>
+        </a>
+
+        <a routerLink="/issues" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
+            <app-svg-icon name="kanban" [size]="16"></app-svg-icon>
+            <span>Tasks & Kanban</span>
+        </a>
+
+        <div class="nav-group-title">ORGANIZATION</div>
+
+        <a *ngIf="authService.isAdminOrManager()" routerLink="/employees" routerLinkActive="active" class="nav-item"
+            (click)="onNavClick()">
+            <app-svg-icon name="team" [size]="16"></app-svg-icon>
+            <span>Team Members</span>
+        </a>
+
+        <a *ngIf="authService.isAdmin()" routerLink="/departments" routerLinkActive="active" class="nav-item"
+            (click)="onNavClick()">
+            <app-svg-icon name="departments" [size]="16"></app-svg-icon>
+            <span>Departments</span>
+        </a>
+
+        <div class="nav-group-title">ACCOUNT</div>
+
+        <a routerLink="/profile" routerLinkActive="active" class="nav-item" (click)="onNavClick()">
+            <app-svg-icon name="profile" [size]="16"></app-svg-icon>
+            <span>My Account</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="status-indicator-box">
+            <span class="indicator-dot"></span>
+            <span>API Connected</span>
+        </div>
+    </div>
+</aside>
+
+<div *ngIf="mobileOpen" class="mobile-backdrop" (click)="closeMobileMenu.emit()"></div>

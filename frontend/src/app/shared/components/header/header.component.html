@@ -1,0 +1,21 @@
+<header class="app-header">
+    <div class="header-left">
+        <h2 class="page-greeting">
+            {{ greeting() }}, <span class="user-highlight">{{ currentUser()?.name }}</span> 👋
+        </h2>
+        <span class="user-email">{{ currentUser()?.email }}</span>
+    </div>
+
+    <div class="header-right">
+        <app-badge *ngIf="currentUser()?.role" [type]="currentUser()!.role"></app-badge>
+
+        <div class="user-menu">
+            <div class="avatar">
+                {{ getInitials(currentUser()?.name) }}
+            </div>
+            <button class="btn btn-secondary btn-sm" (click)="authService.logout()">
+                Sign Out
+            </button>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,114 @@
+<div class="modal-backdrop" (click)="close.emit()">
+    <div class="modal-dialog task-modal" (click)="$event.stopPropagation()">
+        <div class="modal-top">
+            <div class="task-badge-row">
+                <span class="type-tag">{{ issue.issue_type }}</span>
+                <span class="task-id">#{{ issue.id }}</span>
+            </div>
+
+            <button class="close-btn" (click)="close.emit()">✕</button>
+        </div>
+
+        <h2 class="task-title">{{ issue.title }}</h2>
+
+        <!-- Controls Bar -->
+        <div class="meta-controls-grid">
+            <div class="meta-field">
+                <label class="form-label">Status</label>
+                <select class="form-select" [ngModel]="issue.status" (ngModelChange)="updateStatus($event)">
+                    <option [value]="statuses.BACKLOG">BACKLOG</option>
+                    <option [value]="statuses.TODO">TODO</option>
+                    <option [value]="statuses.IN_PROGRESS">IN_PROGRESS</option>
+                    <option [value]="statuses.REVIEW">REVIEW</option>
+                    <option [value]="statuses.TESTING">TESTING</option>
+                    <option [value]="statuses.DONE">DONE</option>
+                </select>
+            </div>
+
+            <div class="meta-field">
+                <label class="form-label">Priority</label>
+                <select class="form-select" [ngModel]="issue.priority" (ngModelChange)="updatePriority($event)">
+                    <option [value]="priorities.LOW">LOW</option>
+                    <option [value]="priorities.MEDIUM">MEDIUM</option>
+                    <option [value]="priorities.HIGH">HIGH</option>
+                    <option [value]="priorities.CRITICAL">CRITICAL</option>
+                </select>
+            </div>
+
+            <div class="meta-field">
+                <label class="form-label">Assignee</label>
+                <select class="form-select" [ngModel]="issue.assignee_id" (ngModelChange)="updateAssignee($event)">
+                    <option *ngFor="let emp of employees" [value]="emp.id">
+                        {{ emp.user.name }}
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <h4>Description</h4>
+            <p class="desc-text">{{ issue.description || 'No description provided.' }}</p>
+        </div>
+
+        <!-- File Attachments Section -->
+        <div class="section-box">
+            <div class="section-header">
+                <h4>Attachments ({{ attachments.length }})</h4>
+                <label class="btn btn-secondary btn-sm upload-label">
+                    <app-svg-icon name="attachment" [size]="12"></app-svg-icon>
+                    <span>Upload File</span>
+                    <input type="file" (change)="onFileSelected($event)" hidden />
+                </label>
+            </div>
+
+            <div class="attachments-list">
+                <div *ngFor="let att of attachments" class="att-item">
+                    <div class="att-meta">
+                        <span class="att-name">{{ att.original_name }}</span>
+                        <span class="att-size">{{ (att.file_size / 1024) | number:'1.0-1' }} KB</span>
+                    </div>
+                    <div class="att-actions">
+                        <a [href]="attachmentService.getFileUrl(att.stored_name)" target="_blank"
+                            class="btn btn-secondary btn-sm">
+                            Download
+                        </a>
+                        <button class="btn btn-danger btn-sm" (click)="deleteAttachment(att.id)">
+                            <app-svg-icon name="trash" [size]="12"></app-svg-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="attachments.length === 0" class="text-muted text-xs font-italic">
+                    No attached files.
+                </div>
+            </div>
+        </div>
+
+        <!-- Discussion Comments Thread -->
+        <div class="section-box">
+            <h4>Comments & Discussion ({{ comments.length }})</h4>
+
+            <div class="comments-stack">
+                <div *ngFor="let c of comments" class="comment-bubble">
+                    <div class="comment-top">
+                        <span class="author">Employee #{{ c.employee_id }}</span>
+                        <span class="date">{{ c.created_at | date:'short' }}</span>
+                    </div>
+                    <p class="comment-body">{{ c.content }}</p>
+                </div>
+
+                <div *ngIf="comments.length === 0" class="text-muted text-xs font-italic">
+                    No comments posted yet.
+                </div>
+            </div>
+
+            <div class="add-comment-row">
+                <textarea rows="2" class="form-control" placeholder="Add a comment or update..."
+                    [(ngModel)]="newCommentText"></textarea>
+                <button class="btn btn-primary btn-sm mt-2" [disabled]="!newCommentText.trim()" (click)="postComment()">
+                    Post Comment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,217 @@
+<div class="board-page">
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h2>Tasks & Kanban Board</h2>
+          <p class="text-muted text-sm">Organize, drag, and update task statuses across your engineering workflow</p>
+        </div>
+
+        <div class="tools-row">
+          <div class="mode-toggle">
+            <button
+              class="toggle-btn"
+              [class.active]="viewMode === 'kanban'"
+              (click)="viewMode = 'kanban'"
+            >
+              <app-svg-icon name="kanban" [size]="14"></app-svg-icon>
+              <span>Kanban</span>
+            </button>
+            <button
+              class="toggle-btn"
+              [class.active]="viewMode === 'list'"
+              (click)="viewMode = 'list'"
+            >
+              <app-svg-icon name="tasks" [size]="14"></app-svg-icon>
+              <span>List View</span>
+            </button>
+          </div>
+
+          <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+            <app-svg-icon name="plus" [size]="14"></app-svg-icon>
+            <span>Log Task</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Compact Filters Bar -->
+      <div class="filter-panel panel">
+        <div class="filter-item">
+          <label class="form-label">Status</label>
+          <select class="form-select" [(ngModel)]="selectedStatusFilter" (change)="loadIssues()">
+            <option [value]="null">All Statuses</option>
+            <option *ngFor="let st of statusList" [value]="st">{{ st }}</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label class="form-label">Priority</label>
+          <select class="form-select" [(ngModel)]="selectedPriorityFilter" (change)="loadIssues()">
+            <option [value]="null">All Priorities</option>
+            <option *ngFor="let pr of priorityList" [value]="pr">{{ pr }}</option>
+          </select>
+        </div>
+
+        <div class="filter-item filter-btn-box">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-secondary btn-sm" (click)="toggleMyIssues()">
+            {{ showingMyIssuesOnly ? 'Showing My Tasks Only' : 'Filter My Tasks' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- KANBAN BOARD VIEW WITH ANGULAR CDK DRAG & DROP -->
+      <div
+        *ngIf="viewMode === 'kanban'"
+        class="kanban-columns-container"
+        cdkDropListGroup
+      >
+        <div *ngFor="let col of columns()" class="kanban-col panel">
+          <div class="col-header">
+            <div class="col-title-group">
+              <span class="col-title">{{ col.title }}</span>
+              <span class="col-badge">{{ col.issues.length }}</span>
+            </div>
+            <button class="col-add-btn" (click)="openCreateModalWithStatus(col.status)" title="Add task to column">
+              <app-svg-icon name="plus" [size]="12"></app-svg-icon>
+            </button>
+          </div>
+
+          <div
+            cdkDropList
+            [cdkDropListData]="col.issues"
+            (cdkDropListDropped)="onDrop($event, col.status)"
+            class="task-drop-list"
+          >
+            <div
+              *ngFor="let issue of col.issues"
+              cdkDrag
+              class="task-card"
+              (click)="openIssueDetail(issue)"
+            >
+              <div class="card-meta-top">
+                <span class="task-key">#{{ issue.id }}</span>
+                <app-status-badge [type]="issue.priority"></app-status-badge>
+              </div>
+
+              <h4 class="task-card-title">{{ issue.title }}</h4>
+
+              <div class="card-meta-bottom">
+                <span class="type-tag">{{ issue.issue_type }}</span>
+                <span class="assignee-tag">👤 Emp #{{ issue.assignee_id }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="col.issues.length === 0" class="empty-drop-zone">
+              Drag tasks here or click + to add
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIST VIEW -->
+      <div *ngIf="viewMode === 'list'" class="table-wrapper panel">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Task Title</th>
+              <th>Type</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Assignee</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let issue of allIssues()"
+              class="clickable-row"
+              (click)="openIssueDetail(issue)"
+            >
+              <td class="font-semibold">#{{ issue.id }}</td>
+              <td class="font-semibold text-primary">{{ issue.title }}</td>
+              <td class="text-muted">{{ issue.issue_type }}</td>
+              <td><app-status-badge [type]="issue.priority"></app-status-badge></td>
+              <td><app-status-badge [type]="issue.status"></app-status-badge></td>
+              <td>Emp #{{ issue.assignee_id }}</td>
+              <td class="text-muted">{{ (issue.due_date | date:'mediumDate') || '—' }}</td>
+            </tr>
+
+            <tr *ngIf="allIssues().length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">
+                No tasks match the active filters.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Log New Task Modal -->
+      <div *ngIf="showCreateModal()" class="modal-backdrop" (click)="closeCreateModal()">
+        <div class="modal-dialog" (click)="$event.stopPropagation()">
+          <h3>Create Task / Issue</h3>
+
+          <form [formGroup]="issueForm" (ngSubmit)="submitCreateIssue()">
+            <div class="form-group">
+              <label class="form-label">Task Title *</label>
+              <input type="text" class="form-control" formControlName="title" placeholder="e.g. Optimize Database Indexes" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea rows="3" class="form-control" formControlName="description" placeholder="Technical specifications..."></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Project *</label>
+                <select class="form-select" formControlName="project_id">
+                  <option *ngFor="let proj of projects()" [value]="proj.id">{{ proj.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Assignee *</label>
+                <select class="form-select" formControlName="assignee_id">
+                  <option *ngFor="let emp of employees()" [value]="emp.id">{{ emp.user.name }} ({{ emp.designation }})</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" formControlName="issue_type">
+                  <option [value]="types.TASK">TASK</option>
+                  <option [value]="types.BUG">BUG</option>
+                  <option [value]="types.STORY">STORY</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Priority</label>
+                <select class="form-select" formControlName="priority">
+                  <option [value]="priorities.LOW">LOW</option>
+                  <option [value]="priorities.MEDIUM">MEDIUM</option>
+                  <option [value]="priorities.HIGH">HIGH</option>
+                  <option [value]="priorities.CRITICAL">CRITICAL</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn" (click)="closeCreateModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="issueForm.invalid || isSubmitting">Submit Task</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Task Detail Modal -->
+      <app-issue-detail-modal
+        *ngIf="selectedIssue()"
+        [issue]="selectedIssue()!"
+        (close)="selectedIssue.set(null)"
+        (issueUpdated)="loadIssues()"
+      ></app-issue-detail-modal>
+    </div>

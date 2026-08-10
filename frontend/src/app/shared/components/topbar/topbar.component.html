@@ -1,0 +1,35 @@
+<header class="topbar-container">
+    <div class="topbar-left">
+        <button class="menu-toggle-btn" (click)="toggleMobileMenu.emit()">
+            <app-svg-icon name="menu" [size]="18"></app-svg-icon>
+        </button>
+
+        <div class="breadcrumbs">
+            <span class="breadcrumb-item text-muted">Workspace</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item font-semibold">{{ currentSection }}</span>
+        </div>
+    </div>
+
+    <div class="topbar-right">
+        <div class="topbar-search">
+            <app-svg-icon name="search" [size]="14"></app-svg-icon>
+            <input type="text" placeholder="Search tasks, projects..." class="search-input" />
+        </div>
+
+        <div class="user-profile-menu">
+            <div class="avatar-box">
+                {{ getInitials(currentUser()?.name) }}
+            </div>
+
+            <div class="user-details">
+                <span class="user-name">{{ currentUser()?.name }}</span>
+                <app-status-badge *ngIf="currentUser()?.role" [type]="currentUser()!.role"></app-status-badge>
+            </div>
+
+            <button class="btn btn-secondary btn-sm logout-btn" (click)="authService.logout()" title="Sign Out">
+                Logout
+            </button>
+        </div>
+    </div>
+</header>

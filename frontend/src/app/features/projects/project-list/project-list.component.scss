@@ -1,0 +1,111 @@
+    .projects-page {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-header h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .text-sm {
+        font-size: 0.8rem;
+    }
+
+    .text-muted {
+        color: var(--text-muted);
+    }
+
+    .proj-name-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .proj-title-link {
+        font-weight: 600;
+        color: var(--primary-600);
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+
+    .proj-title-link:hover {
+        text-decoration: underline;
+    }
+
+    .proj-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .actions-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .members-stack {
+        margin-bottom: 14px;
+    }
+
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .member-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+    }
+
+    .member-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .member-name {
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .member-sub {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .flex-row {
+        display: flex;
+        gap: 8px;
+    }
+
+    .mt-3 {
+        margin-top: 12px;
+    }
+
+    .text-xs {
+        font-size: 0.75rem;
+    }
+
+    .font-italic {
+        font-style: italic;
+    }

@@ -1,0 +1,133 @@
+.sidebar-container {
+    width: 220px;
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 200;
+    transition: transform 0.2s ease;
+}
+
+.sidebar-header {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo-box {
+    width: 26px;
+    height: 26px;
+    background: var(--primary-dark);
+    color: #FFFFFF;
+    font-size: 0.75rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.brand-tag {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.nav-section {
+    flex: 1;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.nav-group-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    padding: 10px 10px 4px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.825rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background-color: var(--primary-50);
+    color: var(--primary-600);
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.status-indicator-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.725rem;
+    color: var(--text-muted);
+}
+
+.indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-success);
+}
+
+@media (max-width: 768px) {
+    .sidebar-container {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-container.mobile-open {
+        transform: translateX(0);
+    }
+
+    .mobile-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.4);
+        z-index: 190;
+    }
+}
