@@ -1,42 +1,42 @@
-    .employees-page {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
+.employees-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
 
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 
-    .page-header h2 {
+    h2 {
         font-size: 1.2rem;
         font-weight: 700;
     }
+}
 
-    .text-sm {
-        font-size: 0.8rem;
-    }
+.text-sm {
+    font-size: 0.8rem;
+}
 
-    .text-muted {
-        color: var(--text-muted);
-    }
+.text-muted {
+    color: var(--text-muted);
+}
 
-    .actions-group {
-        display: flex;
-        gap: 6px;
-    }
+.actions-group {
+    display: flex;
+    gap: 6px;
+}
 
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
 
-    .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 16px;
-    }
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}

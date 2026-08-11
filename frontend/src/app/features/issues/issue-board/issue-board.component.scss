@@ -8,11 +8,11 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-}
 
-.page-header h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
+    h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
 }
 
 .text-sm {
@@ -49,13 +49,13 @@
     color: var(--text-secondary);
     cursor: pointer;
     border-radius: var(--radius-sm);
-}
 
-.toggle-btn.active {
-    background: var(--bg-surface);
-    color: var(--primary-600);
-    font-weight: 600;
-    box-shadow: var(--shadow-sm);
+    &.active {
+        background: var(--bg-surface);
+        color: var(--primary-600);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+    }
 }
 
 .filter-panel {
@@ -133,11 +133,11 @@
     color: var(--text-muted);
     padding: 2px 4px;
     border-radius: var(--radius-sm);
-}
 
-.col-add-btn:hover {
-    background: var(--bg-subtle);
-    color: var(--text-primary);
+    &:hover {
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+    }
 }
 
 .task-drop-list {
@@ -160,14 +160,14 @@
     flex-direction: column;
     gap: 6px;
     box-shadow: var(--shadow-sm);
-}
 
-.task-card:active {
-    cursor: grabbing;
-}
+    &:active {
+        cursor: grabbing;
+    }
 
-.task-card:hover {
-    border-color: var(--border-strong);
+    &:hover {
+        border-color: var(--border-strong);
+    }
 }
 
 .card-meta-top {
