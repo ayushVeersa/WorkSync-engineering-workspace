@@ -25,7 +25,6 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.component';
 import { IssueDetailModalComponent } from '../issue-detail-modal/issue-detail-modal.component';
 
-
 @Component({
   selector: 'app-issue-board',
   standalone: true,
@@ -49,6 +48,8 @@ export class IssueBoardComponent implements OnInit {
   private toast = inject(ToastService);
   authService = inject(AuthService);
 
+  projectMembers = signal<EmployeeResponse[]>([]);
+
   viewMode: 'kanban' | 'list' = 'kanban';
   isLoading = true;
   isSubmitting = false;
@@ -56,6 +57,8 @@ export class IssueBoardComponent implements OnInit {
   allIssues = signal<IssueResponse[]>([]);
   projects = signal<ProjectResponse[]>([]);
   employees = signal<EmployeeResponse[]>([]);
+
+  attachments: File[] = [];
 
   statusList = Object.values(IssueStatus);
   priorityList = Object.values(IssuePriority);
@@ -73,7 +76,7 @@ export class IssueBoardComponent implements OnInit {
   selectedPriorityFilter: IssuePriority | null = null;
   showingMyIssuesOnly = false;
 
-  showCreateModal = signal<boolean>(false);
+  showCreateModal = signal(false);
   selectedIssue = signal<IssueResponse | null>(null);
 
   types = IssueType;
@@ -93,6 +96,12 @@ export class IssueBoardComponent implements OnInit {
   ngOnInit() {
     this.loadIssues();
     this.loadProjectsAndEmployees();
+
+    this.issueForm.get('project_id')?.valueChanges.subscribe(projectId => {
+      if (projectId) {
+        this.loadProjectMembers(Number(projectId));
+      }
+    });
   }
 
   loadIssues() {
@@ -100,7 +109,10 @@ export class IssueBoardComponent implements OnInit {
 
     const fetch$ = this.showingMyIssuesOnly
       ? this.issueService.getMyIssues()
-      : this.issueService.getIssues(this.selectedStatusFilter || undefined, this.selectedPriorityFilter || undefined);
+      : this.issueService.getIssues(
+          this.selectedStatusFilter || undefined,
+          this.selectedPriorityFilter || undefined
+        );
 
     fetch$.subscribe({
       next: data => {
@@ -124,20 +136,32 @@ export class IssueBoardComponent implements OnInit {
   loadProjectsAndEmployees() {
     this.projectService.getProjects().subscribe(p => {
       this.projects.set(p);
-      if (p.length > 0) this.issueForm.patchValue({ project_id: p[0].id });
-    });
 
-    this.employeeService.getEmployees().subscribe(e => {
-      this.employees.set(e);
-      if (e.length > 0) this.issueForm.patchValue({ assignee_id: e[0].id });
+      if (p.length > 0) {
+        this.issueForm.patchValue({ project_id: p[0].id });
+        this.loadProjectMembers(p[0].id);
+      }
     });
   }
 
-  /**
-   * ANGULAR CDK DRAG & DROP HANDLER
-   * Handles re-ordering within column or transferring task across status columns,
-   * and persists new status to backend via PUT /issues/{id}
-   */
+  loadProjectMembers(projectId: number) {
+    this.projectService.getProjectMembers(projectId).subscribe(members => {
+      this.projectMembers.set(members);
+
+      this.issueForm.patchValue({
+        assignee_id: members.length > 0 ? members[0].id : 0
+      });
+    });
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files) {
+      this.attachments = Array.from(input.files);
+    }
+  }
+
   onDrop(event: CdkDragDrop<IssueResponse[]>, targetStatus: IssueStatus) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -179,23 +203,31 @@ export class IssueBoardComponent implements OnInit {
 
   closeCreateModal() {
     this.showCreateModal.set(false);
+    this.attachments = [];
   }
 
   submitCreateIssue() {
     if (this.issueForm.invalid) return;
 
     this.isSubmitting = true;
+
     const formVal = this.issueForm.value;
 
-    this.issueService.createIssue({
-      title: formVal.title!,
-      description: formVal.description || undefined,
-      issue_type: formVal.issue_type as IssueType,
-      priority: formVal.priority as IssuePriority,
-      status: formVal.status as IssueStatus,
-      project_id: Number(formVal.project_id),
-      assignee_id: Number(formVal.assignee_id)
-    }).subscribe({
+    const formData = new FormData();
+
+    formData.append('title', formVal.title!);
+    formData.append('description', formVal.description || '');
+    formData.append('issue_type', formVal.issue_type as string);
+    formData.append('priority', formVal.priority as string);
+    formData.append('status', formVal.status as string);
+    formData.append('project_id', String(formVal.project_id));
+    formData.append('assignee_id', String(formVal.assignee_id));
+
+    this.attachments.forEach(file => {
+      formData.append('files', file);
+    });
+
+    this.issueService.createIssue(formData).subscribe({
       next: created => {
         this.toast.success(`Task #${created.id} logged!`);
         this.isSubmitting = false;
