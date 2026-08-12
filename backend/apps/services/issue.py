@@ -1,10 +1,15 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile, File, Depends
+import uuid
+from pathlib import Path
 
+from apps.models.user import User
 from apps.models.issue import Issue
 from apps.models.project import Project
 from apps.models.employee import Employee
+from apps.models.attachment import Attachment
 from apps.models.employee_project import EmployeeProject
+from apps.schemas.role import Role
 from apps.schemas.issue import (
     IssueCreate,
     IssueUpdate,
@@ -15,6 +20,9 @@ from apps.schemas.issue import (
 from apps.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+UPLOAD_DIR = Path("uploads/issues")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_issue(
@@ -39,6 +47,7 @@ def get_issue(
 
 def get_all_issues(
     db: Session,
+    user: User,
     status: IssueStatus | None = None,
     priority: IssuePriority | None = None,
     issue_type: IssueType | None = None,
@@ -48,7 +57,23 @@ def get_all_issues(
     skip: int = 0,
     limit: int = 100,
 ):
+
     query = db.query(Issue)
+
+    if user.role == Role.EMPLOYEE:
+        employee = (
+            db.query(Employee)
+            .filter(Employee.user_id == user.id)
+            .first()
+        )
+
+        if not employee:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Employee profile not found",
+            )
+
+        query = db.query(Issue).filter(Issue.assignee_id == employee.id)
 
     if status is not None:
         query = query.filter(Issue.status == status)
@@ -88,10 +113,11 @@ def get_all_issues(
     return issues
 
 
-def create_issue(
+async def create_issue(
     db: Session,
     issue: IssueCreate,
     reporter_id: int,
+    files: list[UploadFile] | None = None,
 ):
     project = (
         db.query(Project)
@@ -100,9 +126,12 @@ def create_issue(
     )
 
     if not project:
-        logger.warning("Project not found for id=%s while creating issue", issue.project_id)
+        logger.warning(
+            "Project not found for id=%s while creating issue",
+            issue.project_id,
+        )
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
@@ -113,9 +142,12 @@ def create_issue(
     )
 
     if not assignee:
-        logger.warning("Employee not found for id=%s while creating issue", issue.assignee_id)
+        logger.warning(
+            "Employee not found for id=%s while creating issue",
+            issue.assignee_id,
+        )
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Employee not found",
         )
 
@@ -135,7 +167,7 @@ def create_issue(
             issue.project_id,
         )
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee is not assigned to this project",
         )
 
@@ -152,11 +184,45 @@ def create_issue(
     )
 
     db.add(db_issue)
+    db.flush()
+
+    if files:
+        for file in files:
+            if not file.filename:
+                continue
+
+            extension = Path(file.filename).suffix
+            stored_name = f"{uuid.uuid4()}{extension}"
+            file_path = UPLOAD_DIR / stored_name
+
+            contents = await file.read()
+
+            with open(file_path, "wb") as buffer:
+                buffer.write(contents)
+
+            attachment = Attachment(
+                original_name=file.filename,
+                stored_name=stored_name,
+                file_path=str(file_path),
+                content_type=file.content_type or "application/octet-stream",
+                file_size=len(contents),
+                issue_id=db_issue.id,
+                uploaded_by=reporter_id,
+            )
+
+            db.add(attachment)
+
     db.commit()
     db.refresh(db_issue)
 
-    logger.info("Created issue id=%s title=%s project_id=%s reporter_id=%s",
-                db_issue.id, db_issue.title, issue.project_id, reporter_id)
+    logger.info(
+        "Created issue id=%s title=%s project_id=%s reporter_id=%s",
+        db_issue.id,
+        db_issue.title,
+        issue.project_id,
+        reporter_id,
+    )
+
     return db_issue
 
 
