@@ -29,7 +29,7 @@ export class IssueService {
     return this.http.get<IssueResponse>(`/issues/${id}`);
   }
 
-  createIssue(payload: IssueCreate): Observable<IssueResponse> {
+  createIssue(payload: FormData): Observable<IssueResponse> {
     return this.http.post<IssueResponse>('/issues', payload);
   }
 

@@ -2,12 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AttachmentResponse } from '../models/attachment.model';
+import { environment } from '../../environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AttachmentService {
   private http = inject(HttpClient);
+  private backendURL = environment.backendURL
 
   getIssueAttachments(issueId: number): Observable<AttachmentResponse[]> {
     return this.http.get<AttachmentResponse[]>(`/attachments/issue/${issueId}`);
@@ -24,6 +26,6 @@ export class AttachmentService {
   }
 
   getFileUrl(storedName: string): string {
-    return `/uploads/${storedName}`;
+    return `${this.backendURL}/uploads/issues/${storedName}`;
   }
 }
