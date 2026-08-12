@@ -25,7 +25,12 @@
             </thead>
             <tbody>
                 <tr *ngFor="let emp of employees()">
-                    <td class="font-semibold">{{ emp.user.name }}</td>
+                    <!-- <td class="font-semibold">{{ emp.user.name }}</td> -->
+                    <td>
+                        <button class="employee-name-link" (click)="openEmployeeDetails(emp)">
+                            {{ emp.user.name }}
+                        </button>
+                    </td>
                     <td class="text-muted">{{ emp.user.email }}</td>
                     <td><app-status-badge [type]="emp.user.role"></app-status-badge></td>
                     <td>🏢 {{ emp.department?.name || 'Unassigned' }}</td>
@@ -51,6 +56,59 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    <div *ngIf="selectedEmployee()" class="modal-backdrop" (click)="closeEmployeeDetails()">
+        <div class="modal-dialog employee-details-card" (click)="$event.stopPropagation()">
+            <div class="employee-details-header">
+                <div>
+                    <h3>{{ selectedEmployee()?.user?.name }}</h3>
+                    <p class="text-muted">
+                        {{ selectedEmployee()?.designation }}
+                    </p>
+                </div>
+
+                <button type="button" class="toast-close" (click)="closeEmployeeDetails()">
+                    ✕
+                </button>
+            </div>
+
+            <div class="employee-details-grid">
+                <div>
+                    <span class="detail-label">Email</span>
+                    <span>{{ selectedEmployee()?.user?.email }}</span>
+                </div>
+
+                <div>
+                    <span class="detail-label">Role</span>
+                    <span>{{ selectedEmployee()?.user?.role }}</span>
+                </div>
+
+                <div>
+                    <span class="detail-label">Age</span>
+                    <span>{{ selectedEmployee()?.age }}</span>
+                </div>
+
+                <div>
+                    <span class="detail-label">Department</span>
+                    <span>
+                        {{ selectedEmployee()?.department?.name || 'Unassigned' }}
+                    </span>
+                </div>
+
+                <div>
+                    <span class="detail-label">Designation</span>
+                    <span>{{ selectedEmployee()?.designation }}</span>
+                </div>
+
+                <div>
+                    <span class="detail-label">Status</span>
+                    <span>
+                        {{ selectedEmployee()?.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Create Employee Modal -->

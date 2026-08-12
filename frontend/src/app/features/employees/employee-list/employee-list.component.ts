@@ -34,10 +34,20 @@ export class EmployeeListComponent implements OnInit {
   departments = signal<DepartmentResponse[]>([]);
   roles = Role;
 
+  selectedEmployee = signal<EmployeeResponse | null>(null);
+
   showCreateModal = signal<boolean>(false);
   showEditModal = signal<boolean>(false);
   isSubmitting = false;
   editingEmployee = signal<EmployeeResponse | null>(null);
+
+  openEmployeeDetails(emp: EmployeeResponse) {
+    this.selectedEmployee.set(emp);
+  }
+
+  closeEmployeeDetails() {
+    this.selectedEmployee.set(null);
+  }
 
   createForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
