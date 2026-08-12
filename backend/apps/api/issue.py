@@ -1,9 +1,13 @@
 from sqlalchemy.orm import Session
+from datetime import datetime
 from fastapi import (
     APIRouter,
     Depends,
     status,
     Query,
+    UploadFile,
+    File,
+    Form
 )
 
 from apps.db.database import get_db
@@ -55,7 +59,7 @@ def get_all(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
-    _: User = Depends(
+    user: User = Depends(
         require_roles(
             Role.ADMIN,
             Role.MANAGER,
@@ -65,6 +69,7 @@ def get_all(
 ):
     return get_all_issues(
         db=db,
+        user=user,
         status=status,
         priority=priority,
         issue_type=issue_type,
@@ -182,8 +187,16 @@ def get_by_id(
     response_model=IssueResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create(
-    payload: IssueCreate,
+async def create(
+    title: str = Form(...),
+    description: str | None = Form(None),
+    issue_type: IssueType = Form(IssueType.TASK),
+    priority: IssuePriority = Form(IssuePriority.MEDIUM),
+    issue_status: IssueStatus = Form(IssueStatus.TODO),
+    project_id: int = Form(...),
+    assignee_id: int = Form(...),
+    due_date: datetime | None = Form(None),
+    files: list[UploadFile] | None = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -192,11 +205,46 @@ def create(
         current_user.id,
     )
 
-    return create_issue(
+    payload = IssueCreate(
+        title=title,
+        description=description,
+        issue_type=issue_type,
+        priority=priority,
+        status=issue_status,
+        project_id=project_id,
+        assignee_id=assignee_id,
+        due_date=due_date,
+    )
+
+    return await create_issue(
         db=db,
         issue=payload,
+        files=files,
         reporter_id=employee.id,
     )
+
+# @router.post(
+#     "",
+#     response_model=IssueResponse,
+#     status_code=status.HTTP_201_CREATED,
+# )
+# def create(
+#     payload: IssueCreate,
+#     files: list[UploadFile] | None = File(None),
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     employee = get_employee_by_user_id(
+#         db,
+#         current_user.id,
+#     )
+
+#     return create_issue(
+#         db=db,
+#         issue=payload,
+#         files=files,
+#         reporter_id=employee.id,
+#     )
 
 
 @router.put(
