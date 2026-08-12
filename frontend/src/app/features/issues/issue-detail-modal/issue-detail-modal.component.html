@@ -51,37 +51,146 @@
         </div>
 
         <!-- File Attachments Section -->
-        <div class="section-box">
+        <div class="section-box attachments-section">
+
             <div class="section-header">
-                <h4>Attachments ({{ attachments.length }})</h4>
+                <div>
+                    <h4>Attachments ({{ attachments.length }})</h4>
+                    <span class="attachment-count" *ngIf="attachments.length > 0">
+                        {{ attachments.length }} file{{ attachments.length > 1 ? 's' : '' }}
+                    </span>
+                </div>
+
                 <label class="btn btn-secondary btn-sm upload-label">
                     <app-svg-icon name="attachment" [size]="12"></app-svg-icon>
                     <span>Upload File</span>
-                    <input type="file" (change)="onFileSelected($event)" hidden />
+
+                    <input
+                        type="file"
+                        (change)="onFileSelected($event)"
+                        hidden
+                        multiple
+                    />
                 </label>
             </div>
 
-            <div class="attachments-list">
-                <div *ngFor="let att of attachments" class="att-item">
-                    <div class="att-meta">
-                        <span class="att-name">{{ att.original_name }}</span>
-                        <span class="att-size">{{ (att.file_size / 1024) | number:'1.0-1' }} KB</span>
+            <!-- Attachments -->
+            <div class="attachments-grid" *ngIf="attachments.length > 0">
+
+                <div
+                    *ngFor="let att of attachments"
+                    class="attachment-card"
+                >
+
+                    <!-- Preview -->
+                    <div class="attachment-preview">
+
+                        <!-- Image -->
+                        <img
+                            *ngIf="isImage(att.content_type)"
+                            [src]="attachmentService.getFileUrl(att.stored_name)"
+                            [alt]="att.original_name"
+                            class="attachment-image"
+                        />
+
+                        <!-- PDF -->
+                        <iframe
+                            *ngIf="isPdf(att.content_type)"
+                            [src]="attachmentService.getFileUrl(att.stored_name)"
+                            class="attachment-pdf"
+                        ></iframe>
+
+                        <!-- Video -->
+                        <video
+                            *ngIf="isVideo(att.content_type)"
+                            controls
+                            preload="metadata"
+                            class="attachment-video"
+                        >
+                            <source
+                                [src]="attachmentService.getFileUrl(att.stored_name)"
+                                [type]="att.content_type"
+                            />
+                        </video>
+
+                        <!-- Other files -->
+                        <div
+                            *ngIf="
+                                !isImage(att.content_type) &&
+                                !isPdf(att.content_type) &&
+                                !isVideo(att.content_type)
+                            "
+                            class="attachment-file-preview"
+                        >
+                            <app-svg-icon
+                                name="attachment"
+                                [size]="28"
+                            ></app-svg-icon>
+
+                            <span>FILE</span>
+                        </div>
+
                     </div>
-                    <div class="att-actions">
-                        <a [href]="attachmentService.getFileUrl(att.stored_name)" target="_blank"
-                            class="btn btn-secondary btn-sm">
-                            Download
+
+                    <!-- File information -->
+                    <div class="attachment-info">
+
+                        <span
+                            class="attachment-name"
+                            [title]="att.original_name"
+                        >
+                            {{ att.original_name }}
+                        </span>
+
+                        <span class="attachment-size">
+                            {{ (att.file_size / 1024) | number:'1.0-1' }} KB
+                        </span>
+
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="attachment-actions">
+
+                        <a
+                            [href]="attachmentService.getFileUrl(att.stored_name)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-secondary btn-sm attachment-open-btn"
+                        >
+                            Open
                         </a>
-                        <button class="btn btn-danger btn-sm" (click)="deleteAttachment(att.id)">
-                            <app-svg-icon name="trash" [size]="12"></app-svg-icon>
+
+                        <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            title="Delete attachment"
+                            (click)="deleteAttachment(att.id)"
+                        >
+                            <app-svg-icon
+                                name="trash"
+                                [size]="12"
+                            ></app-svg-icon>
                         </button>
+
                     </div>
+
                 </div>
 
-                <div *ngIf="attachments.length === 0" class="text-muted text-xs font-italic">
-                    No attached files.
-                </div>
             </div>
+
+            <!-- Empty state -->
+            <div
+                *ngIf="attachments.length === 0"
+                class="attachments-empty"
+            >
+                <app-svg-icon
+                    name="attachment"
+                    [size]="20"
+                ></app-svg-icon>
+
+                <span>No attached files.</span>
+            </div>
+
         </div>
 
         <!-- Discussion Comments Thread -->

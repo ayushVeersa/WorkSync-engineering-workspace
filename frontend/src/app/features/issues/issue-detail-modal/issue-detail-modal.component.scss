@@ -82,40 +82,234 @@
     cursor: pointer;
 }
 
-.attachments-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.attachments-section {
+    width: 100%;
 }
 
-.att-item {
+.attachments-section .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 10px;
-    background: var(--bg-subtle);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
 }
 
-.att-meta {
+.attachments-section .section-header > div {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
-.att-name {
-    font-size: 0.8rem;
-    font-weight: 600;
+.attachments-section h4 {
+    margin: 0;
 }
 
-.att-size {
+.attachment-count {
     font-size: 0.7rem;
     color: var(--text-muted);
 }
 
-.att-actions {
+
+/* Upload button */
+
+.upload-label {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+
+/* =========================================
+   ATTACHMENT GRID
+   ========================================= */
+
+.attachments-grid {
+    display: grid;
+
+    /*
+     * Each attachment gets its own card.
+     * Multiple cards appear in one row when
+     * there is enough space.
+     */
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(155px, 1fr)
+    );
+
+    gap: 10px;
+
+    width: 100%;
+}
+
+.attachment-card {
+    min-width: 0;
+
     display: flex;
+    flex-direction: column;
+
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.attachment-card:hover {
+    border-color: var(--primary-300);
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+
+.attachment-preview {
+    width: 100%;
+    height: 105px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background: var(--surface-secondary);
+
+    border-bottom: 1px solid var(--border-color);
+}
+
+
+.attachment-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--surface-secondary);
+}
+
+.attachment-pdf {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+.attachment-video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+.attachment-file-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 6px;
+    color: var(--text-muted);
+}
+
+.attachment-file-preview span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.attachment-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 8px 4px;
+    min-width: 0;
+}
+
+.attachment-name {
+    display: block;
+    min-width: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attachment-size {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+
+.attachment-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 5px 8px 8px;
+}
+
+.attachment-open-btn {
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.attachments-empty {
+    min-height: 70px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    color: var(--text-muted);
+
+    font-size: 0.75rem;
+    font-style: italic;
+
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-subtle);
+}
+
+
+@media (max-width: 600px) {
+
+    .attachments-grid {
+        grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+        );
+    }
+
+    .attachment-preview {
+        height: 90px;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .attachments-grid {
+        grid-template-columns: 1fr;
+    }
+
 }
 
 .comments-stack {

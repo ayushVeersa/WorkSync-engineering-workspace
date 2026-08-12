@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IssueService } from '../../../core/services/issue.service';
@@ -20,10 +20,10 @@ import { SvgIconComponent } from '../../../shared/components/svg-icon/svg-icon.c
   templateUrl: './issue-detail-modal.component.html',
   styleUrl: './issue-detail-modal.component.scss' 
 })
-export class IssueDetailModalComponent implements OnInit {
+export class IssueDetailModalComponent implements OnChanges {
   @Input({ required: true }) issue!: IssueResponse;
-  @Output() close = new EventEmitter<void>();
-  @Output() issueUpdated = new EventEmitter<void>();
+  @Output() close = new EventEmitter();
+  @Output() issueUpdated = new EventEmitter();
 
   private issueService = inject(IssueService);
   private commentService = inject(CommentService);
@@ -39,10 +39,12 @@ export class IssueDetailModalComponent implements OnInit {
   employees: EmployeeResponse[] = [];
   newCommentText = '';
 
-  ngOnInit() {
-    this.loadComments();
-    this.loadAttachments();
-    this.loadEmployees();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['issue']?.currentValue?.id) {
+      this.loadComments();
+      this.loadAttachments();
+      this.loadEmployees();
+    }
   }
 
   loadComments() {
@@ -55,6 +57,18 @@ export class IssueDetailModalComponent implements OnInit {
 
   loadEmployees() {
     this.employeeService.getEmployees().subscribe(e => this.employees = e);
+  }
+
+  isImage(contentType: string): boolean {
+    return contentType.startsWith('image/');
+  }
+
+  isPdf(contentType: string): boolean {
+    return contentType === 'application/pdf';
+  }
+
+  isVideo(contentType: string): boolean {
+    return contentType.startsWith('video/');
   }
 
   updateStatus(newStatus: IssueStatus) {
@@ -90,7 +104,9 @@ export class IssueDetailModalComponent implements OnInit {
   postComment() {
     if (!this.newCommentText.trim()) return;
 
-    this.commentService.createComment(this.issue.id, { content: this.newCommentText.trim() }).subscribe({
+    this.commentService.createComment(this.issue.id, {
+      content: this.newCommentText.trim()
+    }).subscribe({
       next: () => {
         this.toast.success('Comment posted');
         this.newCommentText = '';
