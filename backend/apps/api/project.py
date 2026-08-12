@@ -40,8 +40,9 @@ def get_all_projects(
     status: ProjectStatus | None = Query(default=None, alias="status"),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
+    assigned_to: str | None = Query(default=None, description="Filter by user ID or 'me'"),
     db: Session = Depends(get_db),
-    _: User = Depends(
+    current_user: User = Depends(
         require_roles(
             Role.ADMIN,
             Role.MANAGER,
@@ -53,6 +54,8 @@ def get_all_projects(
         db,
         search=search,
         status=status,
+        assigned_to=assigned_to,
+        current_user=current_user,
         skip=skip,
         limit=limit,
     )

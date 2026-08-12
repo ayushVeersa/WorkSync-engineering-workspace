@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from apps.models.project import Project
+from apps.models.employee_project import EmployeeProject
+from apps.models.user import User
+from apps.schemas.role import Role
 from apps.schemas.project import (
     ProjectCreate,
     ProjectUpdate,
@@ -16,10 +19,34 @@ def get_projects(
     db: Session,
     search: str | None = None,
     status: ProjectStatus | None = None,
+    assigned_to: str | None = None,
+    current_user: User = None,
     skip: int = 0,
     limit: int = 100,
 ):
     query = db.query(Project)
+
+    if current_user and current_user.role == Role.EMPLOYEE:
+        query = query.join(
+            EmployeeProject,
+            EmployeeProject.project_id == Project.id,
+        ).filter(
+            EmployeeProject.employee_id == current_user.employee.id
+        )
+    
+    elif assigned_to:
+        if assigned_to.lower() == "me" and current_user:
+            target_id = current_user.employee.id
+        else:
+            try:
+                target_id = int(assigned_to)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="assigned_to must be an integer or 'me'"
+                )
+        
+        query = query.filter(Project.owner_id == target_id)
 
     if search:
         query = query.filter(Project.name.ilike(f"%{search}%"))
@@ -28,13 +55,10 @@ def get_projects(
         query = query.filter(Project.status == status)
 
     projects = query.offset(skip).limit(limit).all()
+    
     logger.info(
-        "Fetched all projects, count=%s, search=%s, status=%s, skip=%s, limit=%s",
-        len(projects),
-        search,
-        status,
-        skip,
-        limit,
+        "Fetched projects, count=%s, search=%s, status=%s, assigned_to=%s, skip=%s, limit=%s",
+        len(projects), search, status, assigned_to, skip, limit,
     )
     return projects
 
@@ -73,9 +97,9 @@ def create_project(
         db.add(db_project)
         db.commit()
         db.refresh(db_project)
-    except Exception:
+    except Exception as e:
         db.rollback()
-        logger.exception("Failed to create project %s", project.name)
+        logger.exception("Failed to create project %s: %s", project.name, e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
