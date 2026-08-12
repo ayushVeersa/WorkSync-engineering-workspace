@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     algorithm: str
     environment: Environment = Environment.dev
 
+    smtp_server: str
+    smtp_port: int
+    smtp_username: str
+    smtp_password: str
+    smtp_from: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()
