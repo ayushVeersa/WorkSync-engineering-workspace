@@ -19,11 +19,23 @@ import { ToastService } from '../../../core/services/toast.service';
           <span *ngIf="toast.type === 'warning'">⚠</span>
           <span *ngIf="toast.type === 'info'">ℹ</span>
         </div>
+
         <div class="toast-body">
-          <h4 *ngIf="toast.title" class="toast-title">{{ toast.title }}</h4>
-          <p class="toast-message">{{ toast.message }}</p>
+          <h4 *ngIf="toast.title" class="toast-title">
+            {{ toast.title }}
+          </h4>
+
+          <p class="toast-message">
+            {{ toast.message }}
+          </p>
         </div>
-        <button class="toast-close" (click)="toastService.remove(toast.id)">✕</button>
+
+        <button
+          class="toast-close"
+          (click)="toastService.remove(toast.id)"
+        >
+          ✕
+        </button>
       </div>
     </div>
   `,
@@ -48,30 +60,70 @@ import { ToastService } from '../../../core/services/toast.service';
       gap: 12px;
       padding: 14px 16px;
       border-radius: var(--radius-md);
-      background: #1E293B;
-      color: #F8FAFC;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+      /* Light toast */
+      background: var(--bg-surface);
+      color: var(--text-primary);
+
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
       border: 1px solid var(--border-color);
+
       animation: slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .toast-success { border-left: 4px solid var(--emerald-500); }
-    .toast-error { border-left: 4px solid var(--rose-500); }
-    .toast-warning { border-left: 4px solid var(--amber-500); }
-    .toast-info { border-left: 4px solid var(--primary-500); }
+    .toast-success {
+      border-left: 4px solid var(--emerald-500);
+    }
+
+    .toast-error {
+      border-left: 4px solid var(--rose-500);
+    }
+
+    .toast-warning {
+      border-left: 4px solid var(--amber-500);
+    }
+
+    .toast-info {
+      border-left: 4px solid var(--primary-500);
+    }
 
     .toast-icon {
       font-weight: bold;
       font-size: 1rem;
     }
-    .toast-success .toast-icon { color: var(--emerald-500); }
-    .toast-error .toast-icon { color: var(--rose-500); }
-    .toast-warning .toast-icon { color: var(--amber-500); }
-    .toast-info .toast-icon { color: var(--primary-500); }
 
-    .toast-body { flex: 1; }
-    .toast-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 2px; }
-    .toast-message { font-size: 0.825rem; color: var(--text-secondary); margin: 0; }
+    .toast-success .toast-icon {
+      color: var(--emerald-500);
+    }
+
+    .toast-error .toast-icon {
+      color: var(--rose-500);
+    }
+
+    .toast-warning .toast-icon {
+      color: var(--amber-500);
+    }
+
+    .toast-info .toast-icon {
+      color: var(--primary-500);
+    }
+
+    .toast-body {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+      color: var(--text-primary);
+    }
+
+    .toast-message {
+      font-size: 0.825rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
 
     .toast-close {
       background: none;
@@ -80,11 +132,21 @@ import { ToastService } from '../../../core/services/toast.service';
       cursor: pointer;
       font-size: 0.9rem;
     }
-    .toast-close:hover { color: var(--text-primary); }
+
+    .toast-close:hover {
+      color: var(--text-primary);
+    }
 
     @keyframes slideInRight {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
   `]
 })
