@@ -34,6 +34,10 @@ export class ProjectListComponent implements OnInit {
 
   projects = signal<ProjectResponse[]>([]);
   statuses = ProjectStatus;
+  statusList = Object.values(ProjectStatus);
+  selectedStatusFilter = '';
+  searchQuery = '';
+
   showCreateModal = signal<boolean>(false);
   showMembersModal = signal<boolean>(false);
   isSubmitting = false;
@@ -54,7 +58,16 @@ export class ProjectListComponent implements OnInit {
   }
 
   loadProjects() {
-    this.projectService.getProjects().subscribe(p => this.projects.set(p));
+    this.projectService.getProjects(
+      this.searchQuery || undefined,
+      this.selectedStatusFilter || undefined
+    ).subscribe(p => this.projects.set(p));
+  }
+
+  clearFilters() {
+    this.selectedStatusFilter = '';
+    this.searchQuery = '';
+    this.loadProjects();
   }
 
   openCreateModal() {

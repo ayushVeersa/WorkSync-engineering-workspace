@@ -72,8 +72,9 @@ export class IssueBoardComponent implements OnInit {
     { title: 'Done', status: IssueStatus.DONE, issues: [] }
   ]);
 
-  selectedStatusFilter: IssueStatus | null = null;
-  selectedPriorityFilter: IssuePriority | null = null;
+  selectedStatusFilter: string = '';
+  selectedPriorityFilter: string = '';
+  searchQuery: string = '';
   showingMyIssuesOnly = false;
 
   showCreateModal = signal(false);
@@ -107,11 +108,22 @@ export class IssueBoardComponent implements OnInit {
   loadIssues() {
     this.isLoading = true;
 
+    const statusParam = (this.selectedStatusFilter && this.selectedStatusFilter !== 'null' && this.selectedStatusFilter !== 'ALL')
+      ? (this.selectedStatusFilter as IssueStatus)
+      : undefined;
+    const priorityParam = (this.selectedPriorityFilter && this.selectedPriorityFilter !== 'null' && this.selectedPriorityFilter !== 'ALL')
+      ? (this.selectedPriorityFilter as IssuePriority)
+      : undefined;
+
     const fetch$ = this.showingMyIssuesOnly
       ? this.issueService.getMyIssues()
       : this.issueService.getIssues(
-          this.selectedStatusFilter || undefined,
-          this.selectedPriorityFilter || undefined
+          statusParam,
+          priorityParam,
+          undefined,
+          undefined,
+          undefined,
+          this.searchQuery || undefined
         );
 
     fetch$.subscribe({
@@ -122,6 +134,14 @@ export class IssueBoardComponent implements OnInit {
       },
       error: () => this.isLoading = false
     });
+  }
+
+  clearFilters() {
+    this.selectedStatusFilter = '';
+    this.selectedPriorityFilter = '';
+    this.searchQuery = '';
+    this.showingMyIssuesOnly = false;
+    this.loadIssues();
   }
 
   distributeColumns(data: IssueResponse[]) {

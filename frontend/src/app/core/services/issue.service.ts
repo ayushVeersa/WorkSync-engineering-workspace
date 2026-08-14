@@ -9,10 +9,21 @@ import { IssueResponse, IssueCreate, IssueUpdate, IssueStatus, IssuePriority } f
 export class IssueService {
   private http = inject(HttpClient);
 
-  getIssues(status?: IssueStatus, priority?: IssuePriority): Observable<IssueResponse[]> {
+  getIssues(
+    status?: string,
+    priority?: string,
+    issueType?: string,
+    assigneeId?: number,
+    projectId?: number,
+    search?: string
+  ): Observable<IssueResponse[]> {
     let params = new HttpParams();
-    if (status) params = params.set('status', status);
-    if (priority) params = params.set('priority', priority);
+    if (status && status !== 'ALL' && status !== 'null') params = params.set('status', status);
+    if (priority && priority !== 'ALL' && priority !== 'null') params = params.set('priority', priority);
+    if (issueType && issueType !== 'ALL' && issueType !== 'null') params = params.set('issue_type', issueType);
+    if (assigneeId) params = params.set('assignee_id', assigneeId.toString());
+    if (projectId) params = params.set('project_id', projectId.toString());
+    if (search) params = params.set('search', search);
 
     return this.http.get<IssueResponse[]>('/issues', { params });
   }

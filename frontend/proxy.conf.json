@@ -31,6 +31,30 @@
     "target": "http://localhost:8000",
     "secure": false
   },
+  "/reports": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/activity": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/integrations": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/tasks": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/me": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
+  "/github": {
+    "target": "http://localhost:8000",
+    "secure": false
+  },
   "/uploads": {
     "target": "http://localhost:8000",
     "secure": false

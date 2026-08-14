@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status, UploadFile, File, Depends
+from sqlalchemy import func
+from fastapi import HTTPException, status as http_status, UploadFile, File, Depends
 import uuid
 from pathlib import Path
 
@@ -38,7 +39,7 @@ def get_issue(
     if not issue:
         logger.warning("Issue not found for id=%s", issue_id)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Issue not found",
         )
     logger.info("Fetched issue id=%s", issue_id)
@@ -47,10 +48,10 @@ def get_issue(
 
 def get_all_issues(
     db: Session,
-    user: User,
-    status: IssueStatus | None = None,
-    priority: IssuePriority | None = None,
-    issue_type: IssueType | None = None,
+    user: User | None = None,
+    status: IssueStatus | str | None = None,
+    priority: IssuePriority | str | None = None,
+    issue_type: IssueType | str | None = None,
     assignee_id: int | None = None,
     project_id: int | None = None,
     search: str | None = None,
@@ -60,7 +61,7 @@ def get_all_issues(
 
     query = db.query(Issue)
 
-    if user.role == Role.EMPLOYEE:
+    if user and user.role == Role.EMPLOYEE:
         employee = (
             db.query(Employee)
             .filter(Employee.user_id == user.id)
@@ -69,11 +70,26 @@ def get_all_issues(
 
         if not employee:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Employee profile not found",
             )
 
         query = db.query(Issue).filter(Issue.assignee_id == employee.id)
+
+    if status is not None:
+        raw_st = str(status).strip().upper()
+        if raw_st in ("ALL", "ALL_STATUSES", "NULL", "NONE", "UNDEFINED", ""):
+            status = None
+
+    if priority is not None:
+        raw_pr = str(priority).strip().upper()
+        if raw_pr in ("ALL", "ALL_PRIORITIES", "NULL", "NONE", "UNDEFINED", ""):
+            priority = None
+
+    if issue_type is not None:
+        raw_tp = str(issue_type).strip().upper()
+        if raw_tp in ("ALL", "ALL_TYPES", "NULL", "NONE", "UNDEFINED", ""):
+            issue_type = None
 
     if status is not None:
         query = query.filter(Issue.status == status)
@@ -113,7 +129,7 @@ def get_all_issues(
     return issues
 
 
-async def create_issue(
+def create_issue(
     db: Session,
     issue: IssueCreate,
     reporter_id: int,
@@ -131,7 +147,7 @@ async def create_issue(
             issue.project_id,
         )
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
@@ -147,7 +163,7 @@ async def create_issue(
             issue.assignee_id,
         )
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Employee not found",
         )
 
@@ -167,7 +183,7 @@ async def create_issue(
             issue.project_id,
         )
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail="Employee is not assigned to this project",
         )
 
@@ -195,7 +211,7 @@ async def create_issue(
             stored_name = f"{uuid.uuid4()}{extension}"
             file_path = UPLOAD_DIR / stored_name
 
-            contents = await file.read()
+            contents = file.file.read()
 
             with open(file_path, "wb") as buffer:
                 buffer.write(contents)
@@ -212,6 +228,9 @@ async def create_issue(
 
             db.add(attachment)
 
+    if db_issue.status == IssueStatus.DONE:
+        db_issue.completed_at = func.now()
+
     db.commit()
     db.refresh(db_issue)
 
@@ -222,6 +241,19 @@ async def create_issue(
         issue.project_id,
         reporter_id,
     )
+
+    try:
+        from apps.services.activity import record_activity
+        record_activity(
+            db=db,
+            action="TASK_CREATED",
+            entity_type="issue",
+            entity_id=db_issue.id,
+            actor_id=reporter_id,
+            metadata={"title": db_issue.title, "status": str(db_issue.status)},
+        )
+    except Exception as exc:
+        logger.warning("Could not record activity for task creation: %s", exc)
 
     return db_issue
 
@@ -234,14 +266,56 @@ def update_issue(
     issue = get_issue(db, issue_id)
 
     data = payload.model_dump(exclude_unset=True)
+    old_status = issue.status
+    old_priority = issue.priority
+    old_assignee = issue.assignee_id
 
     for key, value in data.items():
         setattr(issue, key, value)
+
+    if "status" in data:
+        if issue.status == IssueStatus.DONE and old_status != IssueStatus.DONE:
+            issue.completed_at = func.now()
+        elif issue.status != IssueStatus.DONE and old_status == IssueStatus.DONE:
+            issue.completed_at = None
 
     db.commit()
     db.refresh(issue)
 
     logger.info("Updated issue id=%s with fields=%s", issue_id, list(data.keys()))
+
+    try:
+        from apps.services.activity import record_activity
+        if "status" in data and old_status != issue.status:
+            record_activity(
+                db=db,
+                action="TASK_STATUS_CHANGED",
+                entity_type="issue",
+                entity_id=issue.id,
+                actor_id=issue.assignee_id,
+                metadata={"old_status": str(old_status), "new_status": str(issue.status)},
+            )
+        if "priority" in data and old_priority != issue.priority:
+            record_activity(
+                db=db,
+                action="TASK_PRIORITY_CHANGED",
+                entity_type="issue",
+                entity_id=issue.id,
+                actor_id=issue.assignee_id,
+                metadata={"old_priority": str(old_priority), "new_priority": str(issue.priority)},
+            )
+        if "assignee_id" in data and old_assignee != issue.assignee_id:
+            record_activity(
+                db=db,
+                action="TASK_ASSIGNED",
+                entity_type="issue",
+                entity_id=issue.id,
+                actor_id=issue.assignee_id,
+                metadata={"old_assignee_id": old_assignee, "new_assignee_id": issue.assignee_id},
+            )
+    except Exception as exc:
+        logger.warning("Could not record activity for task update: %s", exc)
+
     return issue
 
 
@@ -255,6 +329,18 @@ def delete_issue(
     db.commit()
 
     logger.info("Deleted issue id=%s", issue_id)
+    try:
+        from apps.services.activity import record_activity
+        record_activity(
+            db=db,
+            action="TASK_DELETED",
+            entity_type="issue",
+            entity_id=issue_id,
+            actor_id=issue.assignee_id,
+        )
+    except Exception as exc:
+        logger.warning("Could not record activity for task deletion: %s", exc)
+
     return {
         "message": "Issue deleted successfully"
     }

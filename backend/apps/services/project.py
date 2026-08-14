@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status as http_status
 
 from apps.models.project import Project
 from apps.models.employee_project import EmployeeProject
@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 def get_projects(
     db: Session,
     search: str | None = None,
-    status: ProjectStatus | None = None,
+    status: ProjectStatus | str | None = None,
     assigned_to: str | None = None,
     current_user: User = None,
     skip: int = 0,
@@ -42,7 +42,7 @@ def get_projects(
                 target_id = int(assigned_to)
             except ValueError:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="assigned_to must be an integer or 'me'"
                 )
         
@@ -50,6 +50,11 @@ def get_projects(
 
     if search:
         query = query.filter(Project.name.ilike(f"%{search}%"))
+
+    if status is not None:
+        raw_val = str(status).strip().upper()
+        if raw_val in ("ALL", "ALL_STATUSES", "NULL", "NONE", "UNDEFINED", ""):
+            status = None
 
     if status is not None:
         query = query.filter(Project.status == status)
@@ -73,7 +78,7 @@ def get_project(db: Session, project_id: int):
     if not project:
         logger.warning("Project not found for id=%s", project_id)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
 
@@ -101,11 +106,25 @@ def create_project(
         db.rollback()
         logger.exception("Failed to create project %s: %s", project.name, e)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
     logger.info("Created project id=%s name=%s owner_id=%s", db_project.id, db_project.name, owner_id)
+
+    try:
+        from apps.services.activity import record_activity
+        record_activity(
+            db=db,
+            action="PROJECT_CREATED",
+            entity_type="project",
+            entity_id=db_project.id,
+            actor_id=owner_id,
+            metadata={"name": db_project.name, "status": str(db_project.status)},
+        )
+    except Exception as exc:
+        logger.warning("Could not record activity for project creation: %s", exc)
+
     return db_project
 
 
@@ -113,6 +132,7 @@ def update_project(
     db: Session,
     project_id: int,
     project_update: ProjectUpdate,
+    actor_id: int | None = None,
 ):
     db_project = get_project(db, project_id)
 
@@ -128,19 +148,35 @@ def update_project(
         db.rollback()
         logger.exception("Failed to update project id=%s", project_id)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
     logger.info("Updated project id=%s with fields=%s", project_id, list(update_data.keys()))
+
+    try:
+        from apps.services.activity import record_activity
+        record_activity(
+            db=db,
+            action="PROJECT_UPDATED",
+            entity_type="project",
+            entity_id=db_project.id,
+            actor_id=actor_id,
+            metadata={"fields": list(update_data.keys())},
+        )
+    except Exception as exc:
+        logger.warning("Could not record activity for project update: %s", exc)
+
     return db_project
 
 
 def delete_project(
     db: Session,
     project_id: int,
+    actor_id: int | None = None,
 ):
     db_project = get_project(db, project_id)
+    project_name = db_project.name
 
     try:
         db.delete(db_project)
@@ -149,11 +185,25 @@ def delete_project(
         db.rollback()
         logger.exception("Failed to delete project id=%s", project_id)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error",
         )
 
     logger.info("Deleted project id=%s", project_id)
+
+    try:
+        from apps.services.activity import record_activity
+        record_activity(
+            db=db,
+            action="PROJECT_DELETED",
+            entity_type="project",
+            entity_id=project_id,
+            actor_id=actor_id,
+            metadata={"name": project_name},
+        )
+    except Exception as exc:
+        logger.warning("Could not record activity for project deletion: %s", exc)
+
     return {
         "message": "Project deleted successfully"
     }

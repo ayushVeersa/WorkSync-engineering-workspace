@@ -7,10 +7,12 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="empty-state-card">
-      <div class="empty-icon">{{ icon }}</div>
+      <div class="empty-icon-wrapper">
+        <span class="empty-icon">{{ icon }}</span>
+      </div>
       <h3 class="empty-title">{{ title }}</h3>
       <p class="empty-description">{{ description }}</p>
-      <button *ngIf="actionLabel" class="btn btn-primary btn-sm" (click)="action.emit()">
+      <button *ngIf="actionLabel" class="btn btn-secondary btn-sm" (click)="action.emit()">
         {{ actionLabel }}
       </button>
     </div>
@@ -22,27 +24,41 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 48px 24px;
-      border: 2px dashed var(--border-color);
-      border-radius: var(--radius-lg);
-      background: rgba(15, 23, 42, 0.4);
-      margin: 16px 0;
+      padding: 40px 20px;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-subtle);
+      margin: 12px 0;
+      transition: all 0.2s ease;
+    }
+    .empty-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
     }
     .empty-icon {
-      font-size: 2.5rem;
-      margin-bottom: 12px;
-      opacity: 0.8;
+      font-size: 1.5rem;
+      line-height: 1;
     }
     .empty-title {
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       font-weight: 700;
-      margin-bottom: 6px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
     }
     .empty-description {
-      font-size: 0.875rem;
+      font-size: 0.825rem;
       color: var(--text-secondary);
-      max-width: 400px;
-      margin-bottom: 16px;
+      max-width: 380px;
+      margin-bottom: 14px;
+      line-height: 1.4;
     }
   `]
 })

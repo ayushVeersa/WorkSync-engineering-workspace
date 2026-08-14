@@ -11,6 +11,33 @@
         </button>
     </div>
 
+    <!-- Filter Bar -->
+    <div class="filter-panel panel mb-3">
+        <div class="filter-item">
+            <label class="form-label">Search Project</label>
+            <input
+                type="text"
+                class="form-control"
+                placeholder="Search by project name..."
+                [(ngModel)]="searchQuery"
+                (keyup.enter)="loadProjects()"
+            />
+        </div>
+
+        <div class="filter-item">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="selectedStatusFilter" (change)="loadProjects()">
+                <option value="">All Statuses</option>
+                <option *ngFor="let st of statusList" [value]="st">{{ st }}</option>
+            </select>
+        </div>
+
+        <div *ngIf="selectedStatusFilter || searchQuery" class="filter-item filter-btn-box">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-outline btn-sm" (click)="clearFilters()">Clear Filters</button>
+        </div>
+    </div>
+
     <!-- Projects Table List -->
     <div class="table-wrapper panel">
         <table class="data-table">

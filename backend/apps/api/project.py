@@ -37,7 +37,7 @@ router = APIRouter(
 )
 def get_all_projects(
     search: str | None = Query(default=None, description="Search by project name"),
-    status: ProjectStatus | None = Query(default=None, alias="status"),
+    status: str | ProjectStatus | None = Query(default=None, alias="status"),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     assigned_to: str | None = Query(default=None, description="Filter by user ID or 'me'"),
@@ -130,7 +130,7 @@ def update_existing_project(
     project_id: int,
     project: ProjectUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(
+    current_user: User = Depends(
         require_roles(
             Role.ADMIN,
             Role.MANAGER,
@@ -141,6 +141,7 @@ def update_existing_project(
         db,
         project_id,
         project,
+        actor_id=current_user.employee.id,
     )
 
 
@@ -150,7 +151,7 @@ def update_existing_project(
 def delete_existing_project(
     project_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(
+    current_user: User = Depends(
         require_roles(
             Role.ADMIN,
         )
@@ -159,4 +160,5 @@ def delete_existing_project(
     return delete_project(
         db,
         project_id,
+        actor_id=current_user.employee.id,
     )

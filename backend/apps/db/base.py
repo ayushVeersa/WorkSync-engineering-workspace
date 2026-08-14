@@ -5,4 +5,5 @@ from apps.models.project import Project
 from apps.models.employee_project import EmployeeProject
 from apps.models.issue import Issue
 from apps.models.comment import Comment
-from apps.models.attachment import Attachment 
+from apps.models.attachment import Attachment
+from apps.models.activity import ActivityLog

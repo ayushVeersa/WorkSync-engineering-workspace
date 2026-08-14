@@ -7,7 +7,8 @@ from fastapi import (
     Query,
     UploadFile,
     File,
-    Form
+    Form,
+    Request,
 )
 
 from apps.db.database import get_db
@@ -50,9 +51,9 @@ router = APIRouter(
     response_model=list[IssueResponse],
 )
 def get_all(
-    status: IssueStatus | None = Query(default=None),
-    priority: IssuePriority | None = Query(default=None),
-    issue_type: IssueType | None = Query(default=None),
+    status: str | IssueStatus | None = Query(default=None),
+    priority: str | IssuePriority | None = Query(default=None),
+    issue_type: str | IssueType | None = Query(default=None),
     assignee_id: int | None = Query(default=None),
     project_id: int | None = Query(default=None),
     search: str | None = Query(default=None, description="Search by title or description"),
@@ -188,15 +189,7 @@ def get_by_id(
     status_code=status.HTTP_201_CREATED,
 )
 async def create(
-    title: str = Form(...),
-    description: str | None = Form(None),
-    issue_type: IssueType = Form(IssueType.TASK),
-    priority: IssuePriority = Form(IssuePriority.MEDIUM),
-    issue_status: IssueStatus = Form(IssueStatus.TODO),
-    project_id: int = Form(...),
-    assignee_id: int = Form(...),
-    due_date: datetime | None = Form(None),
-    files: list[UploadFile] | None = File(None),
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -205,18 +198,38 @@ async def create(
         current_user.id,
     )
 
-    payload = IssueCreate(
-        title=title,
-        description=description,
-        issue_type=issue_type,
-        priority=priority,
-        status=issue_status,
-        project_id=project_id,
-        assignee_id=assignee_id,
-        due_date=due_date,
-    )
+    content_type = request.headers.get("content-type", "")
 
-    return await create_issue(
+    if "application/json" in content_type:
+        body = await request.json()
+        payload = IssueCreate(**body)
+        files = None
+    else:
+        form = await request.form()
+        title = form.get("title")
+        description = form.get("description")
+        issue_type = form.get("issue_type") or IssueType.TASK
+        priority = form.get("priority") or IssuePriority.MEDIUM
+        issue_status = form.get("issue_status") or form.get("status") or IssueStatus.TODO
+        project_id = int(form.get("project_id"))
+        assignee_id = int(form.get("assignee_id"))
+        due_date_str = form.get("due_date")
+        due_date = datetime.fromisoformat(due_date_str) if due_date_str else None
+
+        payload = IssueCreate(
+            title=title,
+            description=description,
+            issue_type=issue_type,
+            priority=priority,
+            status=issue_status,
+            project_id=project_id,
+            assignee_id=assignee_id,
+            due_date=due_date,
+        )
+        raw_files = form.getlist("files")
+        files = [f for f in raw_files if isinstance(f, UploadFile)]
+
+    return create_issue(
         db=db,
         issue=payload,
         files=files,

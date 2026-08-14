@@ -15,6 +15,9 @@ from apps.api.issue import router as issue_router
 from apps.api.comment import router as comment_router
 from apps.api.dashboard import router as dashboard_router
 from apps.api.attachment import router as attachment_router
+from apps.api.my_work import router as my_work_router
+from apps.api.activity import router as activity_router
+from apps.api.reports import router as reports_router
 
 from apps.core.logging import get_logger
 
@@ -107,6 +110,9 @@ app.include_router(issue_router)
 app.include_router(comment_router)
 app.include_router(dashboard_router)
 app.include_router(attachment_router)
+app.include_router(my_work_router)
+app.include_router(activity_router)
+app.include_router(reports_router)
 
 
 @app.get("/health")

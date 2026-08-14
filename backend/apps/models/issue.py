@@ -66,6 +66,11 @@ class Issue(Base):
 
     due_date = Column(DateTime)
 
+    completed_at = Column(
+        DateTime(timezone=True), 
+        nullable=True
+    )
+
     project = relationship(
         "Project",
         back_populates="issues"

@@ -47,6 +47,36 @@ module.exports = {
     "secure": false,
     "bypass": bypassSpaRoute
   },
+  "/reports": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
+  "/activity": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
+  "/integrations": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
+  "/tasks": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
+  "/me": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
+  "/github": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "bypass": bypassSpaRoute
+  },
   "/uploads": {
     "target": "http://localhost:8000",
     "secure": false

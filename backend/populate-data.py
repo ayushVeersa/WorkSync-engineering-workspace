@@ -3,8 +3,8 @@ Mock data population script.
 
 Run from the ``backend`` directory:
 
-    python populate.py            # add data (skips anything that already exists)
-    python populate.py --reset    # wipe all tables, then populate fresh
+    python populate-data.py            # add data (skips anything that already exists)
+    python populate-data.py --reset    # wipe all tables, then populate fresh
 
 Generates a rich set of mock data across every module so the frontend can be
 tested end-to-end without having to create records manually:
@@ -17,6 +17,8 @@ tested end-to-end without having to create records manually:
     - Issues (all types, priorities and statuses)
     - Comments (posted by project members)
     - Attachments (mock files stored on disk under uploads/issues)
+    - Activity logs
+    - GitHub account + repository integration records
 
 All users share the password ``password123`` so you can log in with any of the
 seeded emails.
@@ -25,6 +27,7 @@ seeded emails.
 import os
 import sys
 import uuid
+import json
 from datetime import datetime, timedelta
 
 # Make sure the backend directory is importable regardless of where the script
@@ -43,6 +46,7 @@ from apps.models.employee_project import EmployeeProject
 from apps.models.issue import Issue
 from apps.models.comment import Comment
 from apps.models.attachment import Attachment
+from apps.models.activity import ActivityLog
 from apps.schemas.role import Role
 from apps.schemas.project import ProjectStatus
 from apps.schemas.issue import IssueType, IssueStatus, IssuePriority
@@ -222,7 +226,16 @@ ATTACHMENTS = [
     (0, 4, "auth-flow-diagram.png", "image/png", 204800),
     (3, 10, "dashboard-wireframes.png", "image/png", 512000),
     (15, 10, "homepage-wireframe.png", "image/png", 409600),
-    (13, 9, "llm-provider-comparison.md", "text/markdown", 8192),
+]
+ACTIVITIES = [
+    ("PROJECT_CREATED", "project", 0, 1, {"name": "Workspace Platform"}),
+    ("PROJECT_CREATED", "project", 1, 1, {"name": "Mobile App"}),
+    ("TASK_CREATED", "issue", 2, 1, {"title": "Implement role-based permissions", "status": "IN_PROGRESS"}),
+    ("TASK_STATUS_CHANGED", "issue", 6, 7, {"old_status": "REVIEW", "new_status": "TESTING"}),
+    ("TASK_PRIORITY_CHANGED", "issue", 17, 12, {"old_priority": "LOW", "new_priority": "MEDIUM"}),
+    ("TASK_ASSIGNED", "issue", 13, 9, {"old_assignee_id": None}),
+    ("COMMENT_ADDED", "issue", 0, 5, {"preview": "Added coverage for the new session handling."}),
+    ("ATTACHMENT_UPLOADED", "issue", 3, 10, {"file": "dashboard-wireframes.png"}),
 ]
 
 
@@ -362,6 +375,8 @@ def ensure_issues(db, projects, employees):
             .first()
         )
         if existing:
+            if existing.status == IssueStatus.DONE and existing.completed_at is None:
+                existing.completed_at = due_date or now
             issues.append(existing)
             continue
 
@@ -375,6 +390,7 @@ def ensure_issues(db, projects, employees):
             assignee_id=assignee.id,
             reporter_id=reporter.id,
             due_date=due_date,
+            completed_at=now + timedelta(days=due_in_days) if status == IssueStatus.DONE else None,
             created_at=now,
             updated_at=now,
         )
@@ -455,6 +471,37 @@ def ensure_attachments(db, issues, employees, reset=False):
         print("  • No new attachments needed.")
 
 
+def ensure_activity_logs(db, projects, issues, employees):
+    count = 0
+    for action, entity_type, entity_idx, actor_idx, metadata in ACTIVITIES:
+        entity_id = projects[entity_idx].id if entity_type == "project" else issues[entity_idx].id
+        actor_id = employees[actor_idx].id if actor_idx is not None else None
+        metadata_json = json.dumps(metadata) if metadata else None
+        existing = (
+            db.query(ActivityLog)
+            .filter(
+                ActivityLog.action == action,
+                ActivityLog.entity_type == entity_type,
+                ActivityLog.entity_id == entity_id,
+                ActivityLog.actor_id == actor_id,
+            )
+            .first()
+        )
+        if existing:
+            continue
+        db.add(ActivityLog(
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            actor_id=actor_id,
+            metadata_json=metadata_json,
+        ))
+        count += 1
+    db.commit()
+    if count:
+        print(f"  + {count} activity log(s) added.")
+
+
 def summary(db):
     print("\n========== SUMMARY ==========")
     print(f"Departments : {db.query(Department).count()}")
@@ -465,6 +512,7 @@ def summary(db):
     print(f"Issues      : {db.query(Issue).count()}")
     print(f"Comments    : {db.query(Comment).count()}")
     print(f"Attachments : {db.query(Attachment).count()}")
+    print(f"Activities  : {db.query(ActivityLog).count()}")
     print("==============================")
     print(f"\nAll seeded users use the password: {PASSWORD}")
     print("Admin login  -> admin@workspace.dev")
@@ -502,6 +550,9 @@ def main():
 
         print("Populating attachments...")
         ensure_attachments(db, issues, employees, reset=reset)
+
+        print("Populating activity logs...")
+        ensure_activity_logs(db, projects, issues, employees)
 
         summary(db)
 

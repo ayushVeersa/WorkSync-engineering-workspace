@@ -1,0 +1,210 @@
+<div class="my-work-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">My Work</h1>
+      <p class="page-subtitle">Tasks assigned to you, upcoming work, and recent activity.</p>
+    </div>
+    <button class="btn btn-primary" (click)="loadWorkData()">
+      <app-svg-icon name="dashboard" [size]="16"></app-svg-icon>
+      <span>Refresh</span>
+    </button>
+  </header>
+
+  <!-- Summary Cards -->
+  <section class="summary-grid">
+    <div class="summary-card primary">
+      <div class="card-meta">
+        <span class="card-label">Assigned</span>
+        <app-svg-icon name="projects" [size]="18"></app-svg-icon>
+      </div>
+      <div class="card-value">{{ summary().assigned }}</div>
+      <div class="card-desc">Total tasks on your plate</div>
+    </div>
+
+    <div class="summary-card info">
+      <div class="card-meta">
+        <span class="card-label">In Progress</span>
+        <app-svg-icon name="kanban" [size]="18"></app-svg-icon>
+      </div>
+      <div class="card-value">{{ summary().in_progress }}</div>
+      <div class="card-desc">Currently active work</div>
+    </div>
+
+    <div class="summary-card warning">
+      <div class="card-meta">
+        <span class="card-label">Due Soon</span>
+        <app-svg-icon name="dashboard" [size]="18"></app-svg-icon>
+      </div>
+      <div class="card-value">{{ summary().due_soon }}</div>
+      <div class="card-desc">Due within 3 days</div>
+    </div>
+
+    <div class="summary-card danger">
+      <div class="card-meta">
+        <span class="card-label">Overdue</span>
+        <app-svg-icon name="kanban" [size]="18"></app-svg-icon>
+      </div>
+      <div class="card-value">{{ summary().overdue }}</div>
+      <div class="card-desc">Past deadline</div>
+    </div>
+
+    <div class="summary-card success">
+      <div class="card-meta">
+        <span class="card-label">Completed</span>
+        <app-svg-icon name="dashboard" [size]="18"></app-svg-icon>
+      </div>
+      <div class="card-value">{{ summary().completed }}</div>
+      <div class="card-desc">Finished tasks</div>
+    </div>
+  </section>
+
+  <!-- Filter Bar -->
+  <section class="filter-bar">
+    <div class="search-box">
+      <app-svg-icon name="search" [size]="16"></app-svg-icon>
+      <input
+        type="text"
+        placeholder="Search tasks..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event); onFilterChange()"
+      />
+    </div>
+
+    <div class="filters-group">
+      <select
+        [ngModel]="selectedStatus()"
+        (ngModelChange)="selectedStatus.set($event); onFilterChange()"
+      >
+        <option value="">All Statuses</option>
+        <option value="TODO">To Do</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="REVIEW">Review</option>
+        <option value="DONE">Done</option>
+      </select>
+
+      <select
+        [ngModel]="selectedPriority()"
+        (ngModelChange)="selectedPriority.set($event); onFilterChange()"
+      >
+        <option value="">All Priorities</option>
+        <option value="LOW">Low</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="HIGH">High</option>
+        <option value="CRITICAL">Critical</option>
+      </select>
+
+      <select
+        [ngModel]="selectedProjectId()"
+        (ngModelChange)="selectedProjectId.set($event); onFilterChange()"
+      >
+        <option [ngValue]="null">All Projects</option>
+        <option *ngFor="let p of projects()" [ngValue]="p.id">{{ p.name }}</option>
+      </select>
+
+      <button
+        *ngIf="selectedStatus() || selectedPriority() || selectedProjectId() || searchQuery()"
+        class="btn btn-outline btn-sm"
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </section>
+
+  <!-- Task Tabs & Section Content -->
+  <section class="task-section-box">
+    <div class="tab-nav">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'today'"
+        (click)="setTab('today')"
+      >
+        <span>Today</span>
+        <span class="badge-count">{{ workData()?.today?.length || 0 }}</span>
+      </button>
+
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'upcoming'"
+        (click)="setTab('upcoming')"
+      >
+        <span>Upcoming</span>
+        <span class="badge-count">{{ workData()?.upcoming?.length || 0 }}</span>
+      </button>
+
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'overdue'"
+        (click)="setTab('overdue')"
+      >
+        <span>Overdue</span>
+        <span class="badge-count danger-badge">{{ workData()?.overdue?.length || 0 }}</span>
+      </button>
+
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'completed'"
+        (click)="setTab('completed')"
+      >
+        <span>Recently Completed</span>
+        <span class="badge-count success-badge">{{ workData()?.recently_completed?.length || 0 }}</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading your work...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error() && !loading()" class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn btn-outline" (click)="loadWorkData()">Retry</button>
+    </div>
+
+    <!-- Task List -->
+    <div *ngIf="!loading() && !error()" class="task-list-container">
+      <div *ngIf="activeTasks().length === 0" class="empty-box">
+        <app-empty-state
+          title="No tasks found"
+          message="You have no tasks in this view matching your filters."
+        ></app-empty-state>
+      </div>
+
+      <div class="task-grid" *ngIf="activeTasks().length > 0">
+        <div
+          *ngFor="let task of activeTasks()"
+          class="task-card"
+          (click)="openTaskModal(task)"
+        >
+          <div class="task-card-header">
+            <span class="task-id">TASK-{{ task.id }}</span>
+            <app-status-badge [type]="task.status"></app-status-badge>
+          </div>
+
+          <h3 class="task-title">{{ task.title }}</h3>
+          <p class="task-desc" *ngIf="task.description">{{ task.description | slice:0:100 }}...</p>
+
+          <div class="task-card-footer">
+            <span class="priority-tag" [attr.data-priority]="task.priority">
+              {{ task.priority }}
+            </span>
+            <span class="due-date" *ngIf="task.due_date">
+              📅 {{ task.due_date | date:'mediumDate' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detail Modal -->
+  <app-issue-detail-modal
+    *ngIf="selectedIssue()"
+    [issue]="selectedIssue()!"
+    (close)="closeTaskModal()"
+    (issueUpdated)="onTaskUpdated()"
+  ></app-issue-detail-modal>
+</div>

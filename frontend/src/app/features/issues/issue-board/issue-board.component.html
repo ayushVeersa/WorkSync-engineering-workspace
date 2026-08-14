@@ -36,9 +36,20 @@
       <!-- Compact Filters Bar -->
       <div class="filter-panel panel">
         <div class="filter-item">
+          <label class="form-label">Search</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search task title..."
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="loadIssues()"
+          />
+        </div>
+
+        <div class="filter-item">
           <label class="form-label">Status</label>
           <select class="form-select" [(ngModel)]="selectedStatusFilter" (change)="loadIssues()">
-            <option [value]="null">All Statuses</option>
+            <option value="">All Statuses</option>
             <option *ngFor="let st of statusList" [value]="st">{{ st }}</option>
           </select>
         </div>
@@ -46,29 +57,28 @@
         <div class="filter-item">
           <label class="form-label">Priority</label>
           <select class="form-select" [(ngModel)]="selectedPriorityFilter" (change)="loadIssues()">
-            <option [value]="null">All Priorities</option>
+            <option value="">All Priorities</option>
             <option *ngFor="let pr of priorityList" [value]="pr">{{ pr }}</option>
           </select>
         </div>
 
-        <!-- <div class="filter-item filter-btn-box">
+        <div class="filter-item filter-btn-box">
           <label class="form-label">&nbsp;</label>
-          <button class="btn btn-secondary btn-sm" (click)="toggleMyIssues()">
-            {{ showingMyIssuesOnly ? 'Showing My Tasks Only' : 'Filter My Tasks' }}
-          </button>
-        </div>
-      </div> -->
-        <div
-          *ngIf="authService.isAdmin() || authService.isManager()"
-          class="filter-item filter-btn-box"
-        >
-          <label class="form-label">&nbsp;</label>
-
           <button
             class="btn btn-secondary btn-sm"
             (click)="toggleMyIssues()"
           >
             {{ showingMyIssuesOnly ? 'Showing My Tasks Only' : 'Filter My Tasks' }}
+          </button>
+        </div>
+
+        <div
+          *ngIf="selectedStatusFilter || selectedPriorityFilter || searchQuery || showingMyIssuesOnly"
+          class="filter-item filter-btn-box"
+        >
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-outline btn-sm" (click)="clearFilters()">
+            Clear Filters
           </button>
         </div>
       </div>

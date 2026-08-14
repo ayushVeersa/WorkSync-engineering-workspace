@@ -1,0 +1,238 @@
+.reports-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+  .page-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+
+    select {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.875rem;
+      outline: none;
+      background: #ffffff;
+    }
+  }
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+
+  .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 0.35rem;
+  }
+
+  &.success .val { color: #059669; }
+  &.info .val { color: #0891b2; }
+  &.danger .val { color: #dc2626; }
+  &.primary .val { color: #2563eb; }
+}
+
+.time-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.time-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+
+  .time-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #475569;
+
+    .time-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+  }
+
+  .time-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0.5rem 0 0.25rem 0;
+
+    small {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+  }
+
+  .time-desc {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+}
+
+.distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+
+  .chart-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 1rem 0;
+  }
+
+  .bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .bar-label {
+        width: 100px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .bar-track {
+        flex: 1;
+        height: 12px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        overflow: hidden;
+
+        .bar-fill {
+          height: 100%;
+          border-radius: 6px;
+
+          &.blue { background: #3b82f6; }
+          &.orange { background: #f97316; }
+        }
+      }
+
+      .bar-count {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: #64748b;
+        width: 28px;
+        text-align: right;
+      }
+    }
+  }
+}
+
+.workload-section {
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 1rem 0;
+    }
+  }
+}
+
+.workload-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .badge-num {
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8125rem;
+
+    &.active-num { background: #eff6ff; color: #1d4ed8; }
+    &.completed-num { background: #f0fdf4; color: #15803d; }
+    &.overdue-num { background: #fef2f2; color: #b91c1c; }
+  }
+
+  .workload-status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    &[data-status="OPTIMAL"] { background: #d1fae5; color: #047857; }
+    &[data-status="HIGH"] { background: #fef3c7; color: #b45309; }
+    &[data-status="OVERLOADED"] { background: #fee2e2; color: #b91c1c; }
+  }
+}

@@ -6,26 +6,108 @@
 
         <div class="breadcrumbs">
             <span class="breadcrumb-item text-muted">Workspace</span>
-            <!-- <span class="breadcrumb-separator">/</span> -->
-            <!-- <span class="breadcrumb-item font-semibold">{{ currentSection }}</span> -->
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item font-semibold">{{ currentSection }}</span>
         </div>
     </div>
 
     <div class="topbar-right">
-        <div class="topbar-search">
-            <app-svg-icon name="search" [size]="14"></app-svg-icon>
-            <input type="text" placeholder="Search tasks, projects..." class="search-input" />
+        <!-- Interactive Topbar Search -->
+        <div class="topbar-search-wrapper">
+            <div class="topbar-search">
+                <app-svg-icon name="search" [size]="14"></app-svg-icon>
+                <input
+                    #searchInput
+                    type="text"
+                    placeholder="Search tasks, projects, members..."
+                    class="search-input"
+                    [ngModel]="searchQuery()"
+                    (ngModelChange)="onSearchInput($event)"
+                    (focus)="onSearchFocus()"
+                />
+                <kbd class="search-kbd">Ctrl K</kbd>
+            </div>
+
+            <!-- Live Search Dropdown Popup -->
+            <div *ngIf="isSearchOpen()" class="search-dropdown-menu panel">
+                <div *ngIf="isLoading()" class="search-loading p-3 text-center text-muted text-xs">
+                    Searching platform...
+                </div>
+
+                <div *ngIf="!isLoading()" class="search-results-list">
+                    <!-- Matching Tasks Section -->
+                    <div *ngIf="matchingTasks().length > 0" class="search-group">
+                        <div class="group-header">Tasks & Workload</div>
+                        <div
+                            *ngFor="let task of matchingTasks()"
+                            class="search-item"
+                            (click)="selectResult('task', task)"
+                        >
+                            <div class="item-icon task-icon">✓</div>
+                            <div class="item-info">
+                                <span class="item-title">{{ task.title }}</span>
+                                <span class="item-sub">Task #{{ task.id }}</span>
+                            </div>
+                            <app-status-badge [type]="task.status"></app-status-badge>
+                        </div>
+                    </div>
+
+                    <!-- Matching Projects Section -->
+                    <div *ngIf="matchingProjects().length > 0" class="search-group">
+                        <div class="group-header">Projects</div>
+                        <div
+                            *ngFor="let proj of matchingProjects()"
+                            class="search-item"
+                            (click)="selectResult('project', proj)"
+                        >
+                            <div class="item-icon proj-icon">📁</div>
+                            <div class="item-info">
+                                <span class="item-title">{{ proj.name }}</span>
+                                <span class="item-sub">{{ proj.description || 'Project' }}</span>
+                            </div>
+                            <app-status-badge [type]="proj.status"></app-status-badge>
+                        </div>
+                    </div>
+
+                    <!-- Matching Employees Section -->
+                    <div *ngIf="matchingEmployees().length > 0" class="search-group">
+                        <div class="group-header">Team Directory</div>
+                        <div
+                            *ngFor="let emp of matchingEmployees()"
+                            class="search-item"
+                            (click)="selectResult('employee', emp)"
+                        >
+                            <div class="item-icon emp-icon">👤</div>
+                            <div class="item-info">
+                                <span class="item-title">{{ emp.user.name }}</span>
+                                <span class="item-sub">{{ emp.designation }} • {{ emp.user.email }}</span>
+                            </div>
+                            <app-status-badge [type]="emp.user.role"></app-status-badge>
+                        </div>
+                    </div>
+
+                    <!-- No Results Found State -->
+                    <div
+                        *ngIf="matchingTasks().length === 0 && matchingProjects().length === 0 && matchingEmployees().length === 0"
+                        class="p-3 text-center text-muted text-xs"
+                    >
+                        No matching results found for "{{ searchQuery() }}"
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="user-profile-menu">
-            <div class="avatar-box">
-                {{ getInitials(currentUser()?.name) }}
-            </div>
+            <a routerLink="/profile" class="profile-link-wrapper" title="View Profile & Account">
+                <div class="avatar-box">
+                    {{ getInitials(currentUser()?.name) }}
+                </div>
 
-            <div class="user-details">
-                <span class="user-name">{{ currentUser()?.name }}</span>
-                <app-status-badge *ngIf="currentUser()?.role" [type]="currentUser()!.role"></app-status-badge>
-            </div>
+                <div class="user-details">
+                    <span class="user-name">{{ currentUser()?.name }}</span>
+                    <app-status-badge *ngIf="currentUser()?.role" [type]="currentUser()!.role"></app-status-badge>
+                </div>
+            </a>
 
             <button class="btn btn-secondary btn-sm logout-btn" (click)="authService.logout()" title="Sign Out">
                 Logout

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ProjectResponse, ProjectCreate, ProjectUpdate, AssignmentResponse } from '../models/project.model';
@@ -11,8 +11,12 @@ import { EmployeeResponse } from '../models/employee.model';
 export class ProjectService {
   private http = inject(HttpClient);
 
-  getProjects(): Observable<ProjectResponse[]> {
-    return this.http.get<ProjectResponse[]>('/projects').pipe(
+  getProjects(search?: string, status?: string): Observable<ProjectResponse[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    if (status && status !== 'ALL' && status !== 'null') params = params.set('status', status);
+
+    return this.http.get<ProjectResponse[]>('/projects', { params }).pipe(
       map(projects => Array.isArray(projects) ? projects : [])
     );
   }

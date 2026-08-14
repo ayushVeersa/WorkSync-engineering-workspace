@@ -1,0 +1,79 @@
+<div class="activity-container">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">System Activity Log</h1>
+      <p class="page-subtitle">Append-only audit history of work items, task status transitions, and GitHub events.</p>
+    </div>
+    <button class="btn btn-primary" (click)="loadActivities()">
+      <app-svg-icon name="dashboard" [size]="16"></app-svg-icon>
+      <span>Refresh Logs</span>
+    </button>
+  </header>
+
+  <!-- Filter Controls -->
+  <div class="filter-card">
+    <div class="filter-group">
+      <label>Action Type</label>
+      <select
+        [ngModel]="selectedAction()"
+        (ngModelChange)="selectedAction.set($event); onFilterChange()"
+      >
+        <option value="">All Actions</option>
+        <option value="TASK_CREATED">Task Created</option>
+        <option value="TASK_STATUS_CHANGED">Status Changed</option>
+        <option value="TASK_PRIORITY_CHANGED">Priority Changed</option>
+        <option value="TASK_ASSIGNED">Task Assigned</option>
+        <option value="TASK_DELETED">Task Deleted</option>
+        <option value="GITHUB_PR_OPENED">GitHub PR Opened</option>
+        <option value="GITHUB_PR_MERGED">GitHub PR Merged</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Entity Type</label>
+      <select
+        [ngModel]="selectedEntity()"
+        (ngModelChange)="selectedEntity.set($event); onFilterChange()"
+      >
+        <option value="">All Entities</option>
+        <option value="issue">Task / Issue</option>
+        <option value="project">Project</option>
+        <option value="github">GitHub Event</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Timeline List -->
+  <div class="timeline-box">
+    <div *ngIf="loading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading activity audit logs...</p>
+    </div>
+
+    <div *ngIf="!loading() && activities().length === 0" class="empty-box">
+      <app-empty-state
+        title="No activity recorded"
+        message="No system events match your selected filters."
+      ></app-empty-state>
+    </div>
+
+    <div *ngIf="!loading() && activities().length > 0" class="activity-timeline">
+      <div *ngFor="let log of activities()" class="timeline-item">
+        <div class="timeline-badge" [attr.data-action]="log.action">
+          <app-svg-icon name="dashboard" [size]="14"></app-svg-icon>
+        </div>
+
+        <div class="timeline-content">
+          <div class="log-main">
+            <span class="log-actor">{{ log.actor_name || 'System Automation' }}</span>
+            <span class="log-text">{{ formatActionText(log) }}</span>
+          </div>
+
+          <div class="log-time">
+            {{ log.created_at | date:'medium' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -48,12 +48,31 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard([Role.ADMIN])]
   },
   {
+    path: 'my-work',
+    loadComponent: () => import('./features/my-work/my-work.component').then(m => m.MyWorkComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'activity',
+    loadComponent: () => import('./features/activity/activity.component').then(m => m.ActivityComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'reports',
+    loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard]
   },
   {
+    path: '404',
+    loadComponent: () => import('./features/not-found/not-found.component').then(m => m.NotFoundComponent)
+  },
+  {
     path: '**',
-    redirectTo: 'dashboard'
+    loadComponent: () => import('./features/not-found/not-found.component').then(m => m.NotFoundComponent)
   }
 ];

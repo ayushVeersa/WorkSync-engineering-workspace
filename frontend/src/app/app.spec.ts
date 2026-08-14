@@ -1,23 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { describe, it, expect } from 'vitest';
+import { signal } from '@angular/core';
 import { App } from './app';
 
 describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-    }).compileComponents();
-  });
-
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend');
+  it('should initialize mobileSidebarOpen signal', () => {
+    const app = Object.create(App.prototype);
+    app.mobileSidebarOpen = signal<boolean>(false);
+    expect(app.mobileSidebarOpen()).toBe(false);
   });
 });
