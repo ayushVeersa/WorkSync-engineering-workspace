@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EmployeeResponse, EmployeeRegistrationRequest, EmployeeUpdate } from '../models/employee.model';
+import { EmployeeResponse, EmployeeRegistrationRequest, EmployeeUpdate, BulkImportResponse } from '../models/employee.model';
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +24,12 @@ export class EmployeeService {
 
   createEmployee(payload: EmployeeRegistrationRequest): Observable<EmployeeResponse> {
     return this.http.post<EmployeeResponse>('/employees', payload);
+  }
+
+  bulkImportEmployees(file: File): Observable<BulkImportResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<BulkImportResponse>('/employees/bulk-import', formData);
   }
 
   updateEmployee(id: number, payload: EmployeeUpdate): Observable<EmployeeResponse> {

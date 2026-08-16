@@ -25,3 +25,17 @@ export interface EmployeeResponse {
   department: DepartmentSummary;
   is_active: boolean;
 }
+
+export interface BulkImportRowError {
+  row: number;
+  email?: string;
+  error: string;
+}
+
+export interface BulkImportResponse {
+  total_records: number;
+  imported_count: number;
+  failed_count: number;
+  imported_emails: string[];
+  errors: BulkImportRowError[];
+}

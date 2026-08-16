@@ -5,10 +5,16 @@
             <p class="text-muted text-sm">Engineering staff, department organization, and role credentials</p>
         </div>
 
-        <button *ngIf="authService.isAdmin()" class="btn btn-primary btn-sm" (click)="openCreateModal()">
-            <app-svg-icon name="plus" [size]="14"></app-svg-icon>
-            <span>Add Member</span>
-        </button>
+        <div *ngIf="authService.isAdmin()" class="header-actions">
+            <button class="btn btn-outline btn-sm" (click)="openBulkImportModal()">
+                <app-svg-icon name="dashboard" [size]="14"></app-svg-icon>
+                <span>Bulk Import CSV/XLSX</span>
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+                <app-svg-icon name="plus" [size]="14"></app-svg-icon>
+                <span>Add Member</span>
+            </button>
+        </div>
     </div>
 
     <!-- Directory Filters Bar -->
@@ -73,7 +79,8 @@
                         <button class="employee-name-link" (click)="openEmployeeDetails(emp)">
                             <div class="name-cell-group">
                                 <div class="avatar-circle">
-                                    {{ emp.user.name ? emp.user.name[0].toUpperCase() : 'U' }}
+                                    <img *ngIf="emp.user.profile_image" [src]="emp.user.profile_image" class="avatar-img" [alt]="emp.user.name" />
+                                    <span *ngIf="!emp.user.profile_image">{{ emp.user.name ? emp.user.name[0].toUpperCase() : 'U' }}</span>
                                 </div>
                                 <div class="name-details">
                                     <span class="font-semibold">{{ emp.user.name }}</span>
@@ -117,16 +124,16 @@
         </table>
     </div>
 
-    <!-- ENHANCED INFORMATIVE TEAM MEMBER DETAILS MODAL -->
     <div *ngIf="selectedEmployee()" class="modal-backdrop" (click)="closeEmployeeDetails()">
         <div class="modal-dialog employee-details-card modal-lg" (click)="$event.stopPropagation()">
-            <!-- Modal Header -->
             <div class="employee-details-header">
                 <div class="employee-profile-intro">
                     <div class="avatar-xl">
-                        {{ selectedEmployee()?.user?.name ? selectedEmployee()!.user.name[0].toUpperCase() : 'U' }}
+                        <img *ngIf="selectedEmployee()?.user?.profile_image" [src]="selectedEmployee()!.user.profile_image" class="avatar-img" [alt]="selectedEmployee()!.user.name" />
+                        <span *ngIf="!selectedEmployee()?.user?.profile_image">{{ selectedEmployee()?.user?.name ? selectedEmployee()!.user.name[0].toUpperCase() : 'U' }}</span>
                     </div>
                     <div class="profile-title-block">
+                        <span class="profile-kicker">Employee profile</span>
                         <div class="title-row">
                             <h3>{{ selectedEmployee()?.user?.name }}</h3>
                             <app-status-badge *ngIf="selectedEmployee()?.user?.role" [type]="selectedEmployee()!.user.role"></app-status-badge>
@@ -142,12 +149,9 @@
                     </div>
                 </div>
 
-                <button type="button" class="toast-close" (click)="closeEmployeeDetails()">
-                    ✕
-                </button>
+                <button type="button" class="modal-close-btn" (click)="closeEmployeeDetails()" aria-label="Close employee details">×</button>
             </div>
 
-            <!-- Quick Workload KPI Summary -->
             <div class="kpi-summary-row my-3">
                 <div class="kpi-chip">
                     <span class="kpi-num">{{ selectedEmployeeIssues().length }}</span>
@@ -163,23 +167,21 @@
                 </div>
             </div>
 
-            <!-- Modal Content Navigation Tabs -->
             <div class="modal-tabs">
                 <button class="modal-tab-btn" [class.active]="detailTab() === 'overview'" (click)="setDetailTab('overview')">
-                    Overview Details
+                    Overview
                 </button>
                 <button class="modal-tab-btn" [class.active]="detailTab() === 'projects'" (click)="setDetailTab('projects')">
                     Projects ({{ selectedEmployeeProjects().length }})
                 </button>
                 <button class="modal-tab-btn" [class.active]="detailTab() === 'tasks'" (click)="setDetailTab('tasks')">
-                    Workload Tasks ({{ selectedEmployeeIssues().length }})
+                    Tasks ({{ selectedEmployeeIssues().length }})
                 </button>
                 <button class="modal-tab-btn" [class.active]="detailTab() === 'activity'" (click)="setDetailTab('activity')">
-                    Activity History
+                    Activity
                 </button>
             </div>
 
-            <!-- Tab 1: Overview -->
             <div *ngIf="detailTab() === 'overview'" class="employee-details-grid my-3">
                 <div class="detail-box">
                     <span class="detail-label">Email Address</span>
@@ -362,6 +364,91 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div *ngIf="showBulkImportModal()" class="modal-backdrop" (click)="closeBulkImportModal()">
+        <div class="modal-dialog bulk-import-modal modal-lg" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h3>Bulk Import Team Members</h3>
+                    <p class="text-muted text-sm">Upload a CSV or XLSX file with employee records.</p>
+                </div>
+                <button type="button" class="modal-close-btn" (click)="closeBulkImportModal()" aria-label="Close bulk import modal">×</button>
+            </div>
+
+            <div class="bulk-import-body my-3">
+                <div class="template-bar mb-3">
+                    <span class="text-sm">Need the file format?</span>
+                    <button class="btn btn-secondary btn-xs" (click)="downloadCsvTemplate()">
+                        Download sample CSV
+                    </button>
+                </div>
+
+                <div class="drop-zone" [class.has-file]="selectedImportFile()">
+                    <input type="file" id="bulkFileInput" accept=".csv, .xlsx" (change)="onFileSelected($event)" class="file-input-hidden" />
+                    <label for="bulkFileInput" class="drop-zone-label">
+                        <app-svg-icon name="dashboard" [size]="24" class="text-muted mb-2"></app-svg-icon>
+                        <span class="file-title" *ngIf="!selectedImportFile()">Choose CSV or XLSX file</span>
+                        <span class="file-selected" *ngIf="selectedImportFile()">{{ selectedImportFile()?.name }}</span>
+                        <span class="text-xs text-muted mt-1" *ngIf="selectedImportFile()">{{ (selectedImportFile()?.size || 0) / 1024 | number:'1.0-1' }} KB selected</span>
+                        <span class="text-xs text-muted mt-1" *ngIf="!selectedImportFile()">Columns: Name, Email, Designation, Department, Role, Password, Age</span>
+                    </label>
+                </div>
+
+                <!-- Results Breakdown -->
+                <div *ngIf="importResult()" class="import-results-panel mt-3">
+                    <div class="result-summary-grid">
+                        <div class="result-box">
+                            <span class="lbl">Total Processed</span>
+                            <span class="val">{{ importResult().total_records }}</span>
+                        </div>
+                        <div class="result-box success">
+                            <span class="lbl">Successfully Imported</span>
+                            <span class="val">{{ importResult().imported_count }}</span>
+                        </div>
+                        <div class="result-box danger">
+                            <span class="lbl">Failed / Skipped</span>
+                            <span class="val">{{ importResult().failed_count }}</span>
+                        </div>
+                    </div>
+
+                    <div *ngIf="importResult().errors && importResult().errors.length > 0" class="errors-section mt-3">
+                        <h4 class="text-sm font-semibold text-danger mb-2">Import Error Log ({{ importResult().errors.length }})</h4>
+                        <div class="table-wrapper modal-table">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Row #</th>
+                                        <th>Email Target</th>
+                                        <th>Error Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let err of importResult().errors">
+                                        <td><strong>Row {{ err.row }}</strong></td>
+                                        <td class="text-muted">{{ err.email || 'N/A' }}</td>
+                                        <td class="text-danger text-xs">{{ err.error }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" (click)="closeBulkImportModal()">Close</button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    [disabled]="!selectedImportFile() || isImporting"
+                    (click)="submitBulkImport()"
+                >
+                    {{ isImporting ? 'Importing Employees...' : 'Upload & Register Employees' }}
+                </button>
+            </div>
         </div>
     </div>
 </div>

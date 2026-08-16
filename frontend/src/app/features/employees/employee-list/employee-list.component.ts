@@ -59,7 +59,11 @@ export class EmployeeListComponent implements OnInit {
 
   showCreateModal = signal<boolean>(false);
   showEditModal = signal<boolean>(false);
+  showBulkImportModal = signal<boolean>(false);
+  selectedImportFile = signal<File | null>(null);
   isSubmitting = false;
+  isImporting = false;
+  importResult = signal<any | null>(null);
   editingEmployee = signal<EmployeeResponse | null>(null);
 
   filteredEmployees = computed(() => {
@@ -222,5 +226,60 @@ export class EmployeeListComponent implements OnInit {
         this.loadEmployees();
       }
     });
+  }
+
+  openBulkImportModal() {
+    this.selectedImportFile.set(null);
+    this.importResult.set(null);
+    this.showBulkImportModal.set(true);
+  }
+
+  closeBulkImportModal() {
+    this.showBulkImportModal.set(false);
+    this.selectedImportFile.set(null);
+    this.importResult.set(null);
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedImportFile.set(input.files[0]);
+    }
+  }
+
+  submitBulkImport() {
+    const file = this.selectedImportFile();
+    if (!file) return;
+
+    this.isImporting = true;
+    this.employeeService.bulkImportEmployees(file).subscribe({
+      next: res => {
+        this.isImporting = false;
+        this.importResult.set(res);
+        if (res.imported_count > 0) {
+          this.toast.success(`Successfully imported ${res.imported_count} employee(s)!`);
+          this.loadEmployees();
+        } else {
+          this.toast.warning('No employees were imported. Please check errors below.');
+        }
+      },
+      error: err => {
+        this.isImporting = false;
+        this.toast.error(err.error?.detail || 'Bulk import failed');
+      }
+    });
+  }
+
+  downloadCsvTemplate() {
+    const template = 'Name,Email,Designation,Department,Role,Password,Age\n' +
+                     'Jane Doe,jane.doe@company.com,Frontend Lead,Engineering,EMPLOYEE,WorkSync@123,29\n' +
+                     'John Smith,john.smith@company.com,Engineering Director,Engineering,MANAGER,WorkSync@123,38\n';
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'employee_bulk_import_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }
