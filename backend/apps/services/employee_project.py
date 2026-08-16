@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from apps.models.employee import Employee
 from apps.models.project import Project
 from apps.models.employee_project import EmployeeProject
+from apps.core.mail import queue_project_membership_email
 from apps.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -65,6 +66,13 @@ def assign_employee_to_project(
     db.commit()
 
     logger.info("Assigned employee id=%s to project id=%s", employee_id, project_id)
+
+    queue_project_membership_email(
+        recipient=employee.user.email,
+        name=employee.user.name,
+        project_name=project.name,
+    )
+
     return {
         "message": "Employee assigned successfully"
     }

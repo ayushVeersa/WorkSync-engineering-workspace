@@ -18,6 +18,7 @@ from apps.schemas.issue import (
     IssuePriority,
     IssueType,
 )
+from apps.core.mail import queue_task_assigned_email
 from apps.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -255,6 +256,13 @@ def create_issue(
     except Exception as exc:
         logger.warning("Could not record activity for task creation: %s", exc)
 
+    queue_task_assigned_email(
+        recipient=assignee.user.email,
+        name=assignee.user.name,
+        task_title=db_issue.title,
+        project_name=project.name,
+    )
+
     return db_issue
 
 
@@ -315,6 +323,14 @@ def update_issue(
             )
     except Exception as exc:
         logger.warning("Could not record activity for task update: %s", exc)
+
+    if "assignee_id" in data and old_assignee != issue.assignee_id and issue.assignee:
+        queue_task_assigned_email(
+            recipient=issue.assignee.user.email,
+            name=issue.assignee.user.name,
+            task_title=issue.title,
+            project_name=issue.project.name,
+        )
 
     return issue
 

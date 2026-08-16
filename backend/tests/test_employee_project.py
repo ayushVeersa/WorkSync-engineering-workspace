@@ -29,6 +29,43 @@ def test_assign_employee_to_project(db, make_department, make_user, make_employe
     assert result["message"] == "Employee assigned successfully"
 
 
+def test_assign_employee_to_project_sends_email(
+    db,
+    make_department,
+    make_user,
+    make_employee,
+    make_project,
+    monkeypatch,
+):
+    dept = make_department(name="CSE")
+    u1 = make_user(email="a@test.com", name="Owner")
+    u2 = make_user(email="b@test.com", name="Member")
+    emp1 = make_employee(u1, dept.id)
+    emp2 = make_employee(u2, dept.id)
+    project = make_project("Project A", emp1.id)
+    sent = {}
+
+    def fake_queue_project_membership_email(recipient, name, project_name):
+        sent.update(
+            recipient=recipient,
+            name=name,
+            project_name=project_name,
+        )
+
+    monkeypatch.setattr(
+        "apps.services.employee_project.queue_project_membership_email",
+        fake_queue_project_membership_email,
+    )
+
+    assign_employee_to_project(db, emp2.id, project.id)
+
+    assert sent == {
+        "recipient": "b@test.com",
+        "name": "Member",
+        "project_name": "Project A",
+    }
+
+
 def test_assign_employee_not_found(db, make_project):
     project = make_project("Project A", 1)
     with pytest.raises(HTTPException) as exc:

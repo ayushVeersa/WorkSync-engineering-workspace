@@ -68,6 +68,51 @@ def test_create_issue(db, make_department, make_user, make_employee, make_projec
     assert issue.reporter_id == reporter.id
 
 
+def test_create_issue_sends_assignment_email(
+    db,
+    make_department,
+    make_user,
+    make_employee,
+    make_project,
+    assign,
+    monkeypatch,
+):
+    dept = make_department(name="CSE")
+    u1 = make_user(email="reporter@test.com", name="Reporter")
+    u2 = make_user(email="assignee@test.com", name="Assignee")
+    reporter = make_employee(u1, dept.id)
+    assignee = make_employee(u2, dept.id)
+    project = make_project("Project A", reporter.id)
+    assign(assignee.id, project.id)
+    sent = {}
+
+    def fake_queue_task_assigned_email(recipient, name, task_title, project_name):
+        sent.update(
+            recipient=recipient,
+            name=name,
+            task_title=task_title,
+            project_name=project_name,
+        )
+
+    monkeypatch.setattr(
+        "apps.services.issue.queue_task_assigned_email",
+        fake_queue_task_assigned_email,
+    )
+
+    create_issue(
+        db,
+        IssueCreate(**issue_payload(assignee_id=assignee.id, project_id=project.id)),
+        reporter_id=reporter.id,
+    )
+
+    assert sent == {
+        "recipient": "assignee@test.com",
+        "name": "Assignee",
+        "task_title": "Fix login bug",
+        "project_name": "Project A",
+    }
+
+
 def test_create_issue_project_not_found(db, make_department, make_user, make_employee):
     dept = make_department(name="CSE")
     u1 = make_user(email="reporter@test.com")
@@ -278,6 +323,52 @@ def test_update_issue(db, make_department, make_user, make_employee, make_projec
 
     updated = update_issue(db, issue.id, IssueUpdate(status=IssueStatus.DONE))
     assert updated.status == IssueStatus.DONE
+
+
+def test_update_issue_reassignment_sends_email(
+    db,
+    make_department,
+    make_user,
+    make_employee,
+    make_project,
+    assign,
+    make_issue,
+    monkeypatch,
+):
+    dept = make_department(name="CSE")
+    u1 = make_user(email="a@test.com", name="Reporter")
+    u2 = make_user(email="b@test.com", name="Old Assignee")
+    u3 = make_user(email="c@test.com", name="New Assignee")
+    emp1 = make_employee(u1, dept.id)
+    emp2 = make_employee(u2, dept.id)
+    emp3 = make_employee(u3, dept.id)
+    project = make_project("Project A", emp1.id)
+    assign(emp2.id, project.id)
+    assign(emp3.id, project.id)
+    issue = make_issue(title="I1", project_id=project.id, assignee_id=emp2.id, reporter_id=emp1.id)
+    sent = {}
+
+    def fake_queue_task_assigned_email(recipient, name, task_title, project_name):
+        sent.update(
+            recipient=recipient,
+            name=name,
+            task_title=task_title,
+            project_name=project_name,
+        )
+
+    monkeypatch.setattr(
+        "apps.services.issue.queue_task_assigned_email",
+        fake_queue_task_assigned_email,
+    )
+
+    update_issue(db, issue.id, IssueUpdate(assignee_id=emp3.id))
+
+    assert sent == {
+        "recipient": "c@test.com",
+        "name": "New Assignee",
+        "task_title": "I1",
+        "project_name": "Project A",
+    }
 
 
 def test_delete_issue(db, make_department, make_user, make_employee, make_project, assign, make_issue):

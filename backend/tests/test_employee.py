@@ -60,6 +60,36 @@ def test_create_employee(db, make_department):
     assert employee.user.email == "newemp@test.com"
 
 
+def test_create_employee_sends_welcome_email(db, make_department, monkeypatch):
+    dept = make_department(name="CSE")
+    sent = {}
+
+    def fake_queue_employee_welcome_email(recipient, name, designation, department):
+        sent.update(
+            recipient=recipient,
+            name=name,
+            designation=designation,
+            department=department,
+        )
+
+    monkeypatch.setattr(
+        "apps.services.employee.queue_employee_welcome_email",
+        fake_queue_employee_welcome_email,
+    )
+
+    create_employee(
+        db,
+        EmployeeRegistrationRequest(**employee_payload(department_id=dept.id)),
+    )
+
+    assert sent == {
+        "recipient": "newemp@test.com",
+        "name": "New Employee",
+        "designation": "SDE Intern",
+        "department": "CSE",
+    }
+
+
 def test_create_employee_department_not_found(db):
     with pytest.raises(HTTPException) as exc:
         create_employee(
@@ -210,3 +240,25 @@ def test_employee_not_found(client, db, make_user_with_token):
     _, headers = make_user_with_token(role=Role.ADMIN)
     resp = client.get("/employees/999", headers=headers)
     assert resp.status_code == 404
+
+
+def test_bulk_import_csv_endpoint(client, db, make_department, make_user_with_token):
+    dept = make_department(name="Engineering")
+    _, headers = make_user_with_token(role=Role.ADMIN)
+
+    csv_content = f"Name,Email,Designation,Department,Role,Password,Age\n" \
+                  f"Bulk User 1,bulk1@test.com,Developer,{dept.name},EMPLOYEE,Pass123,28\n" \
+                  f"Bulk User 2,bulk2@test.com,Lead,{dept.name},MANAGER,Pass123,32\n" \
+                  f"Invalid User,bademail,Tester,NonExistentDept,EMPLOYEE,Pass123,25\n"
+
+    files = {"file": ("test_import.csv", csv_content.encode("utf-8"), "text/csv")}
+    resp = client.post("/employees/bulk-import", headers=headers, files=files)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_records"] == 3
+    assert data["imported_count"] == 2
+    assert data["failed_count"] == 1
+    assert "bulk1@test.com" in data["imported_emails"]
+    assert "bulk2@test.com" in data["imported_emails"]
+    assert len(data["errors"]) == 1
+
