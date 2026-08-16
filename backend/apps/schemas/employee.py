@@ -35,6 +35,7 @@ class UserSummary(BaseModel):
     name: str
     email: EmailStr
     role: Role
+    profile_image: str | None = None
 
 
 class DepartmentSummary(BaseModel):
@@ -54,3 +55,17 @@ class EmployeeResponse(EmployeeBase):
     model_config = {
         "from_attributes": True
     }
+
+
+class BulkImportRowError(BaseModel):
+    row: int
+    email: str | None = None
+    error: str
+
+
+class BulkImportResponse(BaseModel):
+    total_records: int
+    imported_count: int
+    failed_count: int
+    imported_emails: list[str]
+    errors: list[BulkImportRowError]
