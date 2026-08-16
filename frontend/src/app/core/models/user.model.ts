@@ -19,15 +19,10 @@ export interface UserResponse {
   email: string;
   age: number;
   role: Role;
+  profile_image?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
-
-export interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  user: UserResponse;
 }
 
 export interface UserSummary {
@@ -35,4 +30,5 @@ export interface UserSummary {
   name: string;
   email: string;
   role: Role;
+  profile_image?: string;
 }

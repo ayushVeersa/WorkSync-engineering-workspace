@@ -1,249 +1,242 @@
 <div class="profile-page">
-  <div class="page-header">
+  <!-- Page Header -->
+  <header class="page-header">
     <div>
-      <h2>My Account & Profile</h2>
-      <p class="text-muted text-sm">Personal credentials, workload metrics, assigned projects, and activity overview</p>
+      <h1 class="page-title">User Profile & Workload Board</h1>
+      <p class="page-subtitle">Account overview, credentials, and real-time personal Kanban task board.</p>
     </div>
-  </div>
+  </header>
 
-  <!-- Performance & Workload Overview Cards -->
-  <div class="stats-grid mb-4">
-    <div class="stat-card panel">
-      <div class="stat-header">
-        <span class="stat-title">Assigned Tasks</span>
-        <app-svg-icon name="issues" [size]="16" class="text-primary"></app-svg-icon>
-      </div>
-      <div class="stat-value">{{ stats().total }}</div>
-      <span class="stat-sub text-muted">Total workload items</span>
-    </div>
+  <div class="profile-layout">
+    <!-- Left Column: Minimalistic User Profile Sidebar -->
+    <aside class="profile-sidebar">
+      <div class="profile-card">
+        <div class="avatar-container">
+          <img *ngIf="user()?.profile_image" [src]="user()?.profile_image" class="profile-avatar-img" [alt]="user()?.name" />
+          <div *ngIf="!user()?.profile_image" class="profile-avatar-initial">
+            {{ user()?.name ? user()!.name[0].toUpperCase() : 'U' }}
+          </div>
 
-    <div class="stat-card panel">
-      <div class="stat-header">
-        <span class="stat-title">In Progress</span>
-        <span class="pulse-indicator warning"></span>
-      </div>
-      <div class="stat-value text-warning">{{ stats().inProgress }}</div>
-      <span class="stat-sub text-muted">Active execution</span>
-    </div>
-
-    <div class="stat-card panel">
-      <div class="stat-header">
-        <span class="stat-title">Completed Tasks</span>
-        <app-svg-icon name="check" [size]="16" class="text-success"></app-svg-icon>
-      </div>
-      <div class="stat-value text-success">{{ stats().completed }}</div>
-      <span class="stat-sub text-muted">Finished workload</span>
-    </div>
-
-    <div class="stat-card panel">
-      <div class="stat-header">
-        <span class="stat-title">Completion Rate</span>
-        <span class="completion-percent">{{ stats().rate }}%</span>
-      </div>
-      <div class="progress-bar-bg mt-2">
-        <div class="progress-bar-fill" [style.width.%]="stats().rate"></div>
-      </div>
-      <span class="stat-sub text-muted mt-1" *ngIf="stats().overdue > 0">
-        <strong class="text-danger">{{ stats().overdue }} overdue task(s)</strong>
-      </span>
-      <span class="stat-sub text-muted mt-1" *ngIf="stats().overdue === 0">
-        All deadlines on schedule
-      </span>
-    </div>
-  </div>
-
-  <div class="profile-layout-grid">
-    <!-- Left Column: User Credentials Card -->
-    <div class="panel content-panel profile-box">
-      <div class="avatar-large">
-        {{ user()?.name ? user()!.name[0].toUpperCase() : 'U' }}
-      </div>
-
-      <h3 class="user-title mt-2">{{ user()?.name }}</h3>
-      <span class="text-muted text-xs mb-2">{{ user()?.email }}</span>
-
-      <div class="badge-group my-2">
-        <app-status-badge *ngIf="user()?.role" [type]="user()!.role"></app-status-badge>
-        <span class="status-pill active-pill">Active Profile</span>
-      </div>
-
-      <div class="info-list mt-3">
-        <div class="info-row">
-          <span class="info-lbl">Account ID</span>
-          <span class="info-val">#{{ user()?.id }}</span>
+          <label class="avatar-upload-overlay" title="Upload profile picture">
+            <input type="file" accept="image/*" (change)="onAvatarSelected($event)" class="file-input-hidden" />
+            <app-svg-icon name="plus" [size]="12"></app-svg-icon>
+            <span class="upload-text">{{ isUploadingAvatar() ? 'Uploading' : 'Change photo' }}</span>
+          </label>
         </div>
-        <div class="info-row">
-          <span class="info-lbl">Designation</span>
-          <span class="info-val">{{ employee()?.designation || 'Engineering Specialist' }}</span>
+
+        <h2 class="user-name">{{ user()?.name }}</h2>
+        <p class="user-email">{{ user()?.email }}</p>
+
+        <div class="role-badge-row">
+          <app-status-badge *ngIf="user()?.role" [type]="user()!.role"></app-status-badge>
         </div>
-        <div class="info-row">
-          <span class="info-lbl">Department</span>
-          <span class="info-val">🏢 {{ employee()?.department?.name || 'Engineering' }}</span>
+
+        <div class="info-divider"></div>
+
+        <div class="info-group">
+          <div class="info-item">
+            <span class="info-label">Designation</span>
+            <span class="info-value">{{ employee()?.designation || 'Specialist' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Department</span>
+            <span class="info-value">🏢 {{ employee()?.department?.name || 'Engineering' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Account ID</span>
+            <span class="info-value">#{{ user()?.id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Age</span>
+            <span class="info-value">{{ user()?.age || employee()?.age || 25 }} yrs</span>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="info-lbl">Age</span>
-          <span class="info-val">{{ user()?.age || employee()?.age || 28 }} years</span>
-        </div>
-        <div class="info-row">
-          <span class="info-lbl">Projects</span>
-          <span class="info-val">{{ myProjects().length }} Assigned</span>
+
+        <div class="info-divider"></div>
+
+        <!-- Metric KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <span class="kpi-value">{{ stats().total }}</span>
+            <span class="kpi-label">Total Tasks</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-value text-accent">{{ stats().inProgress }}</span>
+            <span class="kpi-label">Active</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-value text-success">{{ stats().completed }}</span>
+            <span class="kpi-label">Done</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-value text-danger">{{ stats().overdue }}</span>
+            <span class="kpi-label">Overdue</span>
+          </div>
         </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- Right Column: Interactive Content Tabs -->
-    <div class="panel content-panel main-profile-panel">
-      <!-- Section Tabs Navigation -->
-      <div class="tabs-nav">
+    <!-- Right Main Board -->
+    <main class="profile-main-board">
+      <nav class="board-nav">
         <button
-          class="tab-btn"
+          class="nav-tab-btn"
           [class.active]="activeTab() === 'tasks'"
           (click)="setTab('tasks')"
         >
-          <app-svg-icon name="issues" [size]="14"></app-svg-icon>
-          <span>Assigned Tasks ({{ myIssues().length }})</span>
+          <app-svg-icon name="kanban" [size]="14"></app-svg-icon>
+          <span>Workload Kanban Board</span>
         </button>
 
         <button
-          class="tab-btn"
+          class="nav-tab-btn"
           [class.active]="activeTab() === 'projects'"
           (click)="setTab('projects')"
         >
           <app-svg-icon name="folder" [size]="14"></app-svg-icon>
-          <span>My Projects ({{ myProjects().length }})</span>
+          <span>Assigned Projects ({{ myProjects().length }})</span>
         </button>
 
         <button
-          class="tab-btn"
+          class="nav-tab-btn"
           [class.active]="activeTab() === 'activity'"
           (click)="setTab('activity')"
         >
           <app-svg-icon name="activity" [size]="14"></app-svg-icon>
           <span>Recent Activity</span>
         </button>
-      </div>
+      </nav>
 
-      <!-- Tab 1: Tasks Content -->
-      <div *ngIf="activeTab() === 'tasks'" class="tab-content">
-        <!-- Compact Filter Row -->
-        <div class="filter-row mb-3">
-          <select
-            class="form-select select-sm"
-            [ngModel]="selectedStatusFilter()"
-            (ngModelChange)="selectedStatusFilter.set($event)"
-          >
-            <option value="">All Statuses</option>
-            <option *ngFor="let st of statuses" [value]="st">{{ st }}</option>
-          </select>
-
-          <select
-            class="form-select select-sm"
-            [ngModel]="selectedPriorityFilter()"
-            (ngModelChange)="selectedPriorityFilter.set($event)"
-          >
-            <option value="">All Priorities</option>
-            <option *ngFor="let pr of priorities" [value]="pr">{{ pr }}</option>
-          </select>
-
-          <button
-            *ngIf="selectedStatusFilter() || selectedPriorityFilter()"
-            class="btn btn-outline btn-sm"
-            (click)="clearFilters()"
-          >
-            Clear Filters
-          </button>
+      <!-- TAB 1: KANBAN BOARD LAYOUT -->
+      <div *ngIf="activeTab() === 'tasks'" class="kanban-layout">
+        <!-- Column 1: TODO -->
+        <div class="kanban-column">
+          <div class="column-header">
+            <span class="column-title">To Do</span>
+            <span class="column-count">{{ todoIssues().length }}</span>
+          </div>
+          <div class="kanban-cards">
+            <div *ngFor="let issue of todoIssues()" class="kanban-card">
+              <div class="card-top">
+                <span class="issue-id">#{{ issue.id }}</span>
+                <app-status-badge [type]="issue.priority"></app-status-badge>
+              </div>
+              <h4 class="card-title">{{ issue.title }}</h4>
+              <div class="card-bottom">
+                <span class="text-xs text-muted">{{ issue.due_date ? (issue.due_date | date:'shortDate') : 'No due date' }}</span>
+                <a routerLink="/issues" class="link-btn">View</a>
+              </div>
+            </div>
+            <div *ngIf="todoIssues().length === 0" class="empty-column-state">No pending tasks</div>
+          </div>
         </div>
 
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Task Title</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Due Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let issue of filteredIssues()">
-                <td>
-                  <div class="task-title-cell">
-                    <span class="font-semibold">{{ issue.title }}</span>
-                    <span class="text-xs text-muted">Project #{{ issue.project_id }}</span>
-                  </div>
-                </td>
-                <td><app-status-badge [type]="issue.priority"></app-status-badge></td>
-                <td><app-status-badge [type]="issue.status"></app-status-badge></td>
-                <td class="text-muted text-xs">
-                  {{ issue.due_date ? (issue.due_date | date:'shortDate') : 'No Due Date' }}
-                </td>
-                <td>
-                  <a routerLink="/issues" class="btn btn-secondary btn-xs">View Board</a>
-                </td>
-              </tr>
+        <!-- Column 2: IN PROGRESS -->
+        <div class="kanban-column">
+          <div class="column-header">
+            <span class="column-title">In Progress</span>
+            <span class="column-count">{{ inProgressIssues().length }}</span>
+          </div>
+          <div class="kanban-cards">
+            <div *ngFor="let issue of inProgressIssues()" class="kanban-card">
+              <div class="card-top">
+                <span class="issue-id">#{{ issue.id }}</span>
+                <app-status-badge [type]="issue.priority"></app-status-badge>
+              </div>
+              <h4 class="card-title">{{ issue.title }}</h4>
+              <div class="card-bottom">
+                <span class="text-xs text-muted">{{ issue.due_date ? (issue.due_date | date:'shortDate') : 'No due date' }}</span>
+                <a routerLink="/issues" class="link-btn">View</a>
+              </div>
+            </div>
+            <div *ngIf="inProgressIssues().length === 0" class="empty-column-state">No tasks in progress</div>
+          </div>
+        </div>
 
-              <tr *ngIf="filteredIssues().length === 0">
-                <td colspan="5">
-                  <app-empty-state
-                    title="No matching tasks"
-                    description="No assigned tasks match your selected filter options."
-                    actionLabel="Reset Filters"
-                    (action)="clearFilters()"
-                  ></app-empty-state>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Column 3: IN REVIEW -->
+        <div class="kanban-column">
+          <div class="column-header">
+            <span class="column-title">In Review</span>
+            <span class="column-count">{{ inReviewIssues().length }}</span>
+          </div>
+          <div class="kanban-cards">
+            <div *ngFor="let issue of inReviewIssues()" class="kanban-card">
+              <div class="card-top">
+                <span class="issue-id">#{{ issue.id }}</span>
+                <app-status-badge [type]="issue.priority"></app-status-badge>
+              </div>
+              <h4 class="card-title">{{ issue.title }}</h4>
+              <div class="card-bottom">
+                <span class="text-xs text-muted">{{ issue.due_date ? (issue.due_date | date:'shortDate') : 'No due date' }}</span>
+                <a routerLink="/issues" class="link-btn">View</a>
+              </div>
+            </div>
+            <div *ngIf="inReviewIssues().length === 0" class="empty-column-state">No tasks in review</div>
+          </div>
+        </div>
+
+        <!-- Column 4: DONE -->
+        <div class="kanban-column">
+          <div class="column-header">
+            <span class="column-title">Completed</span>
+            <span class="column-count">{{ doneIssues().length }}</span>
+          </div>
+          <div class="kanban-cards">
+            <div *ngFor="let issue of doneIssues()" class="kanban-card done-card">
+              <div class="card-top">
+                <span class="issue-id">#{{ issue.id }}</span>
+                <app-status-badge [type]="issue.priority"></app-status-badge>
+              </div>
+              <h4 class="card-title line-through">{{ issue.title }}</h4>
+              <div class="card-bottom">
+                <span class="text-xs text-muted">Finished</span>
+                <a routerLink="/issues" class="link-btn">View</a>
+              </div>
+            </div>
+            <div *ngIf="doneIssues().length === 0" class="empty-column-state">No finished tasks yet</div>
+          </div>
         </div>
       </div>
 
-      <!-- Tab 2: Projects Content -->
-      <div *ngIf="activeTab() === 'projects'" class="tab-content">
+      <!-- TAB 2: PROJECTS -->
+      <div *ngIf="activeTab() === 'projects'" class="tab-pane">
         <div *ngIf="myProjects().length > 0" class="projects-grid">
-          <div *ngFor="let proj of myProjects()" class="project-card panel">
-            <div class="project-card-header">
+          <div *ngFor="let proj of myProjects()" class="project-item-card">
+            <div class="proj-header">
               <h4 class="proj-title">{{ proj.name }}</h4>
               <app-status-badge [type]="proj.status"></app-status-badge>
             </div>
-            <p class="proj-desc">{{ proj.description || 'No project description provided.' }}</p>
-            <div class="project-card-footer">
+            <p class="proj-desc">{{ proj.description || 'No description provided.' }}</p>
+            <div class="proj-footer">
               <span class="text-xs text-muted">Created {{ proj.created_at | date:'mediumDate' }}</span>
               <a [routerLink]="['/projects', proj.id]" class="btn btn-secondary btn-xs">Open Details →</a>
             </div>
           </div>
         </div>
-
         <app-empty-state
           *ngIf="myProjects().length === 0"
           title="No assigned projects"
-          description="You are currently not assigned as a member or owner of any projects."
+          description="You are currently not assigned to any engineering projects."
         ></app-empty-state>
       </div>
 
-      <!-- Tab 3: Activity Content -->
-      <div *ngIf="activeTab() === 'activity'" class="tab-content">
-        <div *ngIf="myActivities().length > 0" class="activity-timeline">
-          <div *ngFor="let act of myActivities()" class="timeline-item">
-            <div class="timeline-dot"></div>
-            <div class="timeline-body">
-              <div class="timeline-header">
-                <span class="action-tag">{{ act.action }}</span>
-                <span class="text-xs text-muted">{{ act.created_at | date:'medium' }}</span>
-              </div>
-              <p class="timeline-text">
-                Targeted {{ act.entity_type }} #{{ act.entity_id }}
-              </p>
+      <!-- TAB 3: ACTIVITY -->
+      <div *ngIf="activeTab() === 'activity'" class="tab-pane">
+        <div *ngIf="myActivities().length > 0" class="activity-list">
+          <div *ngFor="let act of myActivities()" class="activity-row">
+            <div class="act-badge">{{ act.action }}</div>
+            <div class="act-main">
+              <span class="act-desc">Action on {{ act.entity_type }} #{{ act.entity_id }}</span>
+              <span class="act-time">{{ act.created_at | date:'medium' }}</span>
             </div>
           </div>
         </div>
-
         <app-empty-state
           *ngIf="myActivities().length === 0"
           title="No recent activity"
           description="No recent actions recorded for your account."
         ></app-empty-state>
       </div>
-    </div>
+    </main>
   </div>
 </div>

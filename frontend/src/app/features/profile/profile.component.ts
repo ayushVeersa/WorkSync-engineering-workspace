@@ -75,6 +75,13 @@ export class ProfileComponent implements OnInit {
     return list;
   });
 
+  todoIssues = computed(() => this.myIssues().filter(i => i.status === IssueStatus.TODO || i.status === IssueStatus.BACKLOG));
+  inProgressIssues = computed(() => this.myIssues().filter(i => i.status === IssueStatus.IN_PROGRESS));
+  inReviewIssues = computed(() => this.myIssues().filter(i => i.status === IssueStatus.REVIEW || i.status === IssueStatus.TESTING));
+  doneIssues = computed(() => this.myIssues().filter(i => i.status === IssueStatus.DONE));
+
+  isUploadingAvatar = signal<boolean>(false);
+
   ngOnInit() {
     this.employeeService.getCurrentEmployee().subscribe(e => {
       this.employee.set(e);
@@ -85,6 +92,18 @@ export class ProfileComponent implements OnInit {
     });
 
     this.issueService.getMyIssues().subscribe(i => this.myIssues.set(i));
+  }
+
+  onAvatarSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.isUploadingAvatar.set(true);
+      this.authService.uploadProfileImage(file).subscribe({
+        next: () => this.isUploadingAvatar.set(false),
+        error: () => this.isUploadingAvatar.set(false)
+      });
+    }
   }
 
   setTab(tab: 'tasks' | 'projects' | 'activity') {
