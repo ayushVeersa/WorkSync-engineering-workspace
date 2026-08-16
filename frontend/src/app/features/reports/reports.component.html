@@ -1,12 +1,14 @@
 <div class="reports-container">
-  <header class="page-header">
+  <header class="report-header">
     <div>
-      <h1 class="page-title">Engineering Analytics & Reports</h1>
-      <p class="page-subtitle">Metrics, workload allocation, distribution, and cycle time analytics.</p>
+      <span class="report-label">Operations report</span>
+      <h1 class="page-title">Engineering Analytics</h1>
+      <p class="page-subtitle">Task health, delivery flow, workload allocation, and project distribution.</p>
     </div>
 
     <div class="filter-controls">
       <select
+        class="report-select"
         [ngModel]="selectedProjectId()"
         (ngModelChange)="selectedProjectId.set($event); onProjectChange()"
       >
@@ -21,35 +23,40 @@
     </div>
   </header>
 
-  <!-- Metric Overview Row -->
   <section class="overview-grid" *ngIf="overview()">
     <div class="metric-card">
       <span class="label">Total Tasks</span>
       <span class="val">{{ overview()?.total_tasks }}</span>
+      <span class="meta">All tracked work items</span>
     </div>
 
     <div class="metric-card success">
       <span class="label">Completed</span>
       <span class="val">{{ overview()?.completed }}</span>
+      <span class="meta">Resolved tasks</span>
     </div>
 
     <div class="metric-card info">
       <span class="label">In Progress</span>
       <span class="val">{{ overview()?.in_progress }}</span>
+      <span class="meta">Currently active</span>
     </div>
 
     <div class="metric-card danger">
       <span class="label">Overdue</span>
       <span class="val">{{ overview()?.overdue }}</span>
+      <span class="meta">Past due date</span>
     </div>
 
     <div class="metric-card primary">
       <span class="label">Completion Rate</span>
       <span class="val">{{ overview()?.completion_rate_percentage }}%</span>
+      <div class="metric-progress">
+        <span [style.width.%]="overview()?.completion_rate_percentage || 0"></span>
+      </div>
     </div>
   </section>
 
-  <!-- Cycle & Lead Time Section -->
   <section class="time-metrics-row" *ngIf="cycleTime()">
     <div class="time-card">
       <div class="time-header">
@@ -79,10 +86,12 @@
     </div>
   </section>
 
-  <!-- Task Distribution Breakdown -->
   <section class="distribution-grid" *ngIf="distribution()">
     <div class="chart-card">
-      <h3 class="chart-title">Task Status Breakdown</h3>
+      <div class="section-heading">
+        <h3 class="chart-title">Task Status Breakdown</h3>
+        <span>Count by workflow stage</span>
+      </div>
       <div class="bar-list">
         <div *ngFor="let item of distribution()?.by_status" class="bar-row">
           <span class="bar-label">{{ item.key }}</span>
@@ -98,7 +107,10 @@
     </div>
 
     <div class="chart-card">
-      <h3 class="chart-title">Task Priority Breakdown</h3>
+      <div class="section-heading">
+        <h3 class="chart-title">Task Priority Breakdown</h3>
+        <span>Count by priority level</span>
+      </div>
       <div class="bar-list">
         <div *ngFor="let item of distribution()?.by_priority" class="bar-row">
           <span class="bar-label">{{ item.key }}</span>
@@ -114,46 +126,50 @@
     </div>
   </section>
 
-  <!-- Team Workload Allocation -->
   <section class="workload-section" *ngIf="workload()">
     <div class="card">
-      <h3 class="card-title">Team Workload & Capacity Allocation</h3>
+      <div class="section-heading">
+        <h3 class="card-title">Team Workload & Capacity Allocation</h3>
+        <span>Active ownership and delivery capacity</span>
+      </div>
 
-      <table class="workload-table">
-        <thead>
-          <tr>
-            <th>Team Member</th>
-            <th>Active Tasks</th>
-            <th>Completed</th>
-            <th>Overdue</th>
-            <th>Workload Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let user of workload()?.workload">
-            <td>
-              <strong class="user-name">{{ user.employee_name }}</strong>
-            </td>
-            <td>
-              <span class="badge-num active-num">{{ user.active_tasks }}</span>
-            </td>
-            <td>
-              <span class="badge-num completed-num">{{ user.completed_tasks }}</span>
-            </td>
-            <td>
-              <span class="badge-num overdue-num">{{ user.overdue_tasks }}</span>
-            </td>
-            <td>
-              <span
-                class="workload-status-badge"
-                [attr.data-status]="user.workload_status"
-              >
-                {{ user.workload_status }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="workload-table">
+          <thead>
+            <tr>
+              <th>Team Member</th>
+              <th>Active Tasks</th>
+              <th>Completed</th>
+              <th>Overdue</th>
+              <th>Workload Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of workload()?.workload">
+              <td>
+                <strong class="user-name">{{ user.employee_name }}</strong>
+              </td>
+              <td>
+                <span class="badge-num active-num">{{ user.active_tasks }}</span>
+              </td>
+              <td>
+                <span class="badge-num completed-num">{{ user.completed_tasks }}</span>
+              </td>
+              <td>
+                <span class="badge-num overdue-num">{{ user.overdue_tasks }}</span>
+              </td>
+              <td>
+                <span
+                  class="workload-status-badge"
+                  [attr.data-status]="user.workload_status"
+                >
+                  {{ user.workload_status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 </div>
