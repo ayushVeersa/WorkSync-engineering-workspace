@@ -57,9 +57,23 @@ def test_login_success(client):
     resp = client.post("/auth/login", json=login_payload())
     assert resp.status_code == 200
     data = resp.json()
-    assert data["token_type"] == "bearer"
-    assert data["access_token"]
-    assert data["user"]["email"] == "admin@test.com"
+    assert data["email"] == "admin@test.com"
+    assert data["role"] == "ADMIN"
+    assert "access_token" not in data
+    set_cookie = resp.headers.get("set-cookie", "")
+    assert "worksync_access_token=" in set_cookie
+    assert "HttpOnly" in set_cookie
+
+
+def test_login_cookie_authenticates_me(client):
+    client.post("/auth/register", json=register_payload())
+    login_resp = client.post("/auth/login", json=login_payload())
+    assert login_resp.status_code == 200
+
+    resp = client.get("/auth/me")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["email"] == "admin@test.com"
 
 
 def test_login_wrong_password(client):
@@ -99,6 +113,21 @@ def test_me_with_invalid_token(client):
 
 
 def test_me_without_token(client):
-    # HTTPBearer with auto_error returns 401 when no Authorization header is present
+    # Missing cookie and header should both be rejected.
     resp = client.get("/auth/me")
     assert resp.status_code == 401
+
+
+def test_logout_clears_cookie(client):
+    client.post("/auth/register", json=register_payload())
+    login_resp = client.post("/auth/login", json=login_payload())
+    assert login_resp.status_code == 200
+
+    logout_resp = client.post("/auth/logout")
+    assert logout_resp.status_code == 200
+    set_cookie = logout_resp.headers.get("set-cookie", "")
+    assert "worksync_access_token=" in set_cookie
+    assert "Max-Age=0" in set_cookie or "expires=" in set_cookie.lower()
+
+    me_resp = client.get("/auth/me")
+    assert me_resp.status_code == 401

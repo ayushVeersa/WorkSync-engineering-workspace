@@ -1,6 +1,4 @@
-from fastapi import HTTPException, status, Depends
-# from fastapi.security import OAuth2PasswordBearer
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, status, Depends, Request
 from sqlalchemy.orm import Session
 from jose import JWTError
 
@@ -12,19 +10,27 @@ from apps.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# oauth2 = OAuth2PasswordBearer(
-#     tokenUrl = "/auth/login"
-# )
-
-security = HTTPBearer()
+ACCESS_TOKEN_COOKIE = "worksync_access_token"
 
 def get_current_user(
-    # token: str = Depends(oauth2),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     db: Session = Depends(get_db)
 ):
     try:
-        token = credentials.credentials
+        token = request.cookies.get(ACCESS_TOKEN_COOKIE)
+        if not token:
+            authorization = request.headers.get("Authorization", "")
+            if authorization.lower().startswith("bearer "):
+                token = authorization.split(" ", 1)[1].strip()
+
+        if not token:
+            logger.warning("Missing auth token in cookie or Authorization header")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         payload = decode_access_token(token)
 
         email = payload.get("sub")
