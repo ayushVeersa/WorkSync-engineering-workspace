@@ -23,7 +23,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (error.status === 401) {
-        if (req.url.includes('/auth/me')) {
+        if (req.url.includes('/auth/me') || req.url.includes('/auth/logout')) {
           return throwError(() => error);
         } else if (!req.url.includes('/auth/login')) {
           authService.logout(false);

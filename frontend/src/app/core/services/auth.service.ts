@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of } from 'rxjs';
-import { UserLogin, UserRegister, UserResponse, TokenResponse } from '../models/user.model';
+import { UserLogin, UserRegister, UserResponse } from '../models/user.model';
 import { Role } from '../models/role.model';
 import { ToastService } from './toast.service';
 
@@ -14,29 +14,23 @@ export class AuthService {
   private router = inject(Router);
   private toast = inject(ToastService);
 
-  private readonly TOKEN_KEY = 'worksync_token';
-
   currentUser = signal<UserResponse | null>(null);
-  token = signal<string | null>(localStorage.getItem(this.TOKEN_KEY));
 
-  isAuthenticated = computed(() => !!this.currentUser() && !!this.token());
+  isAuthenticated = computed(() => !!this.currentUser());
   userRole = computed(() => this.currentUser()?.role || null);
   isAdmin = computed(() => this.userRole() === Role.ADMIN);
   isManager = computed(() => this.userRole() === Role.MANAGER);
   isAdminOrManager = computed(() => this.isAdmin() || this.isManager());
 
   constructor() {
-    if (this.token()) {
-      this.fetchCurrentUser().subscribe();
-    }
+    this.fetchCurrentUser().subscribe();
   }
 
-  login(credentials: UserLogin): Observable<TokenResponse> {
-    return this.http.post<TokenResponse>('/auth/login', credentials).pipe(
+  login(credentials: UserLogin): Observable<UserResponse> {
+    return this.http.post<UserResponse>('/auth/login', credentials).pipe(
       tap(res => {
-        this.setToken(res.access_token);
-        this.currentUser.set(res.user);
-        this.toast.success(`Welcome back, ${res.user.name}! 👋`, 'Logged In');
+        this.currentUser.set(res);
+        this.toast.success(`Welcome back, ${res.name}! 👋`, 'Logged In');
       })
     );
   }
@@ -50,11 +44,22 @@ export class AuthService {
   }
 
   fetchCurrentUser(): Observable<UserResponse | null> {
-    if (!this.getToken()) return of(null);
     return this.http.get<UserResponse>('/auth/me').pipe(
       tap(user => this.currentUser.set(user)),
       catchError(err => {
+        this.currentUser.set(null);
         return of(null);
+      })
+    );
+  }
+
+  uploadProfileImage(file: File): Observable<UserResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<UserResponse>('/auth/profile-image', formData).pipe(
+      tap(updatedUser => {
+        this.currentUser.set(updatedUser);
+        this.toast.success('Profile picture updated successfully!', 'Avatar Updated');
       })
     );
   }
@@ -64,21 +69,14 @@ export class AuthService {
   }
 
   logout(showToast = true) {
-    localStorage.removeItem(this.TOKEN_KEY);
-    this.token.set(null);
-    this.currentUser.set(null);
-    if (showToast) {
-      this.toast.info('You have been logged out safely.', 'Goodbye');
-    }
-    this.router.navigate(['/auth/login']);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  private setToken(token: string) {
-    localStorage.setItem(this.TOKEN_KEY, token);
-    this.token.set(token);
+    this.http.post('/auth/logout', {}).pipe(
+      catchError(() => of(null))
+    ).subscribe(() => {
+      this.currentUser.set(null);
+      if (showToast) {
+        this.toast.info('You have been logged out safely.', 'Goodbye');
+      }
+      this.router.navigate(['/auth/login']);
+    });
   }
 }

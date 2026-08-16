@@ -1,6 +1,6 @@
 <app-toast-container></app-toast-container>
 
-<ng-container *ngIf="authService.token(); else authLayout">
+<ng-container *ngIf="authService.isAuthenticated(); else authLayout">
   <div class="app-shell">
     <app-sidebar
       [mobileOpen]="mobileSidebarOpen()"
