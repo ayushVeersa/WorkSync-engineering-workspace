@@ -16,6 +16,7 @@ class User(Base):
     age=Column(Integer, nullable=False)
     is_active=Column(Boolean, default=True, nullable=False)
     role = Column(Enum(Role, name="user_role"), nullable=False, default=Role.EMPLOYEE)
+    profile_image = Column(String(500), nullable=True)
     employee = relationship(
             "Employee",
             back_populates="user",
