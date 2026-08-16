@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from apps.db.database import get_db
@@ -11,6 +11,7 @@ from apps.schemas.employee import (
     EmployeeUpdate,
     EmployeeResponse,
     EmployeeRegistrationRequest,
+    BulkImportResponse,
 )
 from apps.services.employee import (
     get_employee,
@@ -19,6 +20,7 @@ from apps.services.employee import (
     update_employee,
     delete_employee,
     get_employee_by_user_id,
+    bulk_import_employees,
 )
 
 router = APIRouter(
@@ -102,6 +104,24 @@ def update_existing_employee(
         employee_id,
         employee,
     )
+
+
+@router.post(
+    "/bulk-import",
+    response_model=BulkImportResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN))],
+)
+async def bulk_import(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _ = Depends(get_current_user),
+):
+    """
+    Bulk import employees from CSV or XLSX file (Admin only)
+    """
+    content = await file.read()
+    return bulk_import_employees(db, content, file.filename or "upload.csv")
 
 
 @router.delete(
